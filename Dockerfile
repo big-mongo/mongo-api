@@ -1,13 +1,26 @@
 FROM oven/bun:latest AS builder
 
 WORKDIR /build
+
+# 1. 基于 Debian 镜像安装证书 (因为 apk: not found)
+RUN rm -rf /var/lib/apt/lists/* \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY web/package.json .
 COPY web/bun.lock .
-RUN bun install
+
+# 2. 安装依赖：这里保留 --cert 和 --registry，解决下载时的证书和速度问题
+RUN bun install --cert --registry https://registry.npmmirror.com
+
 COPY ./web .
 COPY ./VERSION .
+
+# 3. 构建前端
 RUN DISABLE_ESLINT_PLUGIN='true' VITE_REACT_APP_VERSION=$(cat VERSION) bun run build
 
+# 4. 构建后端
 FROM golang:alpine AS builder2
 ENV GO111MODULE=on CGO_ENABLED=0
 
