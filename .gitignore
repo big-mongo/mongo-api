@@ -27,3 +27,6 @@ data/
 .gomodcache/
 .gocache-temp
 .gopath
+
+AGENTS.md
+.sisyphus
