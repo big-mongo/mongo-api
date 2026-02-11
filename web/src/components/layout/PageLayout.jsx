@@ -61,8 +61,9 @@ const PageLayout = () => {
   ];
 
   const landingRoutes = ['/'];
-  const shouldHideHeader = landingRoutes.includes(location.pathname);
-  const shouldHideFooter = cardProPages.includes(location.pathname);
+  const isLandingRoute = landingRoutes.includes(location.pathname);
+  const shouldHideHeader = isLandingRoute;
+  const shouldHideFooter = cardProPages.includes(location.pathname) || isLandingRoute;
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
