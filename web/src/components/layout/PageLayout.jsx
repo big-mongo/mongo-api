@@ -60,7 +60,11 @@ const PageLayout = () => {
     '/pricing',
   ];
 
-  const shouldHideFooter = cardProPages.includes(location.pathname);
+  const landingRoutes = ['/'];
+  const isLandingRoute = landingRoutes.includes(location.pathname);
+  const shouldHideHeader = isLandingRoute;
+  const shouldHideFooter = cardProPages.includes(location.pathname) || isLandingRoute;
+  const shouldHideSider = isLandingRoute;
 
   const shouldInnerPadding =
     location.pathname.includes('/console') &&
@@ -68,7 +72,7 @@ const PageLayout = () => {
     location.pathname !== '/console/playground';
 
   const isConsoleRoute = location.pathname.startsWith('/console');
-  const showSider = isConsoleRoute && (!isMobile || drawerOpen);
+  const showSider = isConsoleRoute && (!isMobile || drawerOpen) && !shouldHideSider;
 
   useEffect(() => {
     if (isMobile && drawerOpen && collapsed) {
@@ -128,27 +132,30 @@ const PageLayout = () => {
         overflow: isMobile ? 'visible' : 'hidden',
       }}
     >
-      <Header
-        style={{
-          padding: 0,
-          height: 'auto',
-          lineHeight: 'normal',
-          position: 'fixed',
-          width: '100%',
-          top: 0,
-          zIndex: 100,
-        }}
-      >
-        <HeaderBar
-          onMobileMenuToggle={() => setDrawerOpen((prev) => !prev)}
-          drawerOpen={drawerOpen}
-        />
-      </Header>
+      {!shouldHideHeader && (
+        <Header
+          style={{
+            padding: 0,
+            height: 'auto',
+            lineHeight: 'normal',
+            position: 'fixed',
+            width: '100%',
+            top: 0,
+            zIndex: 100,
+          }}
+        >
+          <HeaderBar
+            onMobileMenuToggle={() => setDrawerOpen((prev) => !prev)}
+            drawerOpen={drawerOpen}
+          />
+        </Header>
+      )}
       <Layout
         style={{
           overflow: isMobile ? 'visible' : 'auto',
           display: 'flex',
           flexDirection: 'column',
+          marginTop: shouldHideHeader ? '0' : '64px',
         }}
       >
         {showSider && (
@@ -186,10 +193,11 @@ const PageLayout = () => {
           <Content
             style={{
               flex: '1 0 auto',
-              overflowY: isMobile ? 'visible' : 'hidden',
+              overflowY: isLandingRoute ? 'visible' : (isMobile ? 'visible' : 'hidden'),
               WebkitOverflowScrolling: 'touch',
               padding: shouldInnerPadding ? (isMobile ? '5px' : '24px') : '0',
               position: 'relative',
+              height: isLandingRoute ? 'auto' : undefined,
             }}
           >
             <App />

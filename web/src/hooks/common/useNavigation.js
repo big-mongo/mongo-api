@@ -37,7 +37,7 @@ export const useNavigation = (t, docsLink, headerNavModules) => {
       {
         text: t('首页'),
         itemKey: 'home',
-        to: '/',
+        to: '/index',
       },
       {
         text: t('控制台'),
