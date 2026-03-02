@@ -1796,7 +1796,7 @@ const Landing = () => {
           <div className="landing-iso__footer-main">
             <a href="#" className="landing-iso__brand">
               <span className="landing-iso__brand-badge">W</span>
-              <span>wawacoding</span>
+              <span>frog-api</span>
             </a>
 
             <div className="landing-iso__footer-links">
@@ -1809,7 +1809,7 @@ const Landing = () => {
             <div className="landing-iso__footer-status">CONNECTED TO GLOBAL CLUSTER: V2.5.1-STABLE</div>
           </div>
 
-          <div className="landing-iso__copyright">© 2024 wawacoding • Empowering Future AI Development</div>
+          <div className="landing-iso__copyright">© 2024 frog-api • Empowering Future AI Development</div>
         </div>
       </footer>
     </div>
