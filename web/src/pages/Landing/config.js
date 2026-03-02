@@ -41,7 +41,7 @@ export const MODELS = [
 // ==================== 导航配置 ====================
 export const NAV_CONFIG = {
   logo: {
-    text: 'wawacoding',
+    text: 'frog-api',
     bgColor: 'bg-blue-600',
     letter: 'W'
   },
@@ -163,7 +163,7 @@ export const FOOTER_CONFIG = {
     { text: 'Privacy', url: '#' }
   ],
   status: 'CONNECTED TO GLOBAL CLUSTER: V2.5.1-STABLE',
-  copyright: '© 2024 wawacoding • Empowering Future AI Development'
+  copyright: '© 2024 frog-api • Empowering Future AI Development'
 };
 
 // ==================== 动画配置 ====================
