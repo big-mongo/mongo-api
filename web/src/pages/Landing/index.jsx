@@ -1457,8 +1457,8 @@ const Landing = () => {
       <div className="landing-iso__nav-wrap">
         <nav className={`landing-iso__nav ${scrolled ? 'is-scrolled' : ''}`}>
           <a href="#" className="landing-iso__brand">
-            <span className="landing-iso__brand-badge">W</span>
-            <span>wawacoding</span>
+            <span className="landing-iso__brand-badge">F</span>
+            <span>frog-api</span>
           </a>
 
           <div className="landing-iso__menu">
