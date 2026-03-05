@@ -1,28 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 const MODELS = [
-  { name: 'GPT-4o', color: '#00b485' },
-  { name: 'Claude 3.5', color: '#ff7a2f' },
-  { name: 'Gemini Pro', color: '#377dff' },
-  { name: 'Llama 3', color: '#07a3e0' },
-  { name: 'DeepSeek', color: '#6367f0' },
-  { name: 'Qwen 2.5', color: '#c95fff' },
+  { name: 'gpt-5.1', color: '#10a37f' },
+  { name: 'gpt-5.1-codex', color: '#0c70f2' },
+  { name: 'gpt-5.2', color: '#8a4dff' },
+  { name: 'gpt-5.2-codex', color: '#d97757' },
+  { name: 'gpt-5.3-codex', color: '#f5b041' },
 ];
 
 const CLOSED_SOURCE_FEATURES = [
-  '闭源模型全接入 (GPT/Claude/Gemini)',
-  'Token 永久有效',
-  '原生并发能力不封顶',
-  'API 调用实时审计',
+  'OpenAI 协议 1:1 兼容接入',
+  '按量计费，无隐形及阶梯消费',
+  '请求级日志追踪与可视化面板',
+  '基础的多节点故障切换支持',
 ];
 
-const CODE_PLAN_FEATURES = [
-  '开源强模型全速访问',
-  '4小时定量配额自动重置',
-  '极速本地网关分发',
-  '100% 隐私安全隔离',
+const ENTERPRISE_FEATURES = [
+  '企业专属高可用专线与优先队列',
+  '自定义限流策略与高并发控制',
+  '团队级 Token 成本拆分与对账',
+  'IP 白名单 + 密钥按期轮换安全策略',
 ];
 
+// --- Icons ---
 const IconBase = ({ children, className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
     {children}
@@ -32,13 +32,6 @@ const IconBase = ({ children, className }) => (
 const IconPulse = ({ className }) => (
   <IconBase className={className}>
     <path d="M3 12h4l2.4-5.4 4.2 10.8 2.2-5.4H21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-  </IconBase>
-);
-
-const IconArrowRight = ({ className }) => (
-  <IconBase className={className}>
-    <path d="M4 12h15" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-    <path d="m12 5 7 7-7 7" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
   </IconBase>
 );
 
@@ -113,95 +106,107 @@ const IconGauge = ({ className }) => (
   </IconBase>
 );
 
+// --- Components ---
 const Orbit = () => (
   <div className="landing-iso__orbit" aria-hidden="true">
     <div className="landing-iso__orbit-core">
-      W
+      F
       <span className="landing-iso__orbit-glow" />
     </div>
     <div className="landing-iso__orbit-ring landing-iso__orbit-ring--inner" />
     <div className="landing-iso__orbit-ring landing-iso__orbit-ring--outer" />
-    {MODELS.map((model, index) => (
-      <div
-        key={model.name}
-        className="landing-iso__satellite"
-        style={{
-          '--orbit-angle': `${(360 / MODELS.length) * index}deg`,
-          '--orbit-color': model.color,
-        }}
-      >
-        <div className="landing-iso__satellite-pill">
-          <span className="landing-iso__satellite-dot" />
-          <span>{model.name}</span>
+    
+    {/* 卫星容器，用于计算旋转 */}
+    {MODELS.map((model, index) => {
+      const angle = (360 / MODELS.length) * index;
+      return (
+        <div 
+          key={model.name} 
+          className="landing-iso__satellite-container"
+          style={{ '--start-angle': `${angle}deg` }}
+        >
+          <div
+            className="landing-iso__satellite"
+            style={{ '--orbit-color': model.color }}
+          >
+            <div className="landing-iso__satellite-pill">
+              <span className="landing-iso__satellite-dot" />
+              <span>{model.name}</span>
+            </div>
+          </div>
         </div>
-      </div>
-    ))}
+      );
+    })}
   </div>
 );
 
 const Landing = () => {
   const [scrolled, setScrolled] = useState(false);
 
+  // 滚动渐显 Hook
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    
-    // 强制重置 body 样式，防止主题系统影响
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // 交叉观察器：实现元素滚动到可视区域时添加 .active 类
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-active');
+            // 可选：如果不希望重复触发，可以在这里 unobserve
+            // observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    );
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+
+    // 隔离外部全局样式干扰
     const originalBodyBg = document.body.style.backgroundColor;
-    const originalBodyColor = document.body.style.color;
-    const originalHtmlBg = document.documentElement.style.backgroundColor;
-    
-    document.body.style.backgroundColor = '#f5f7fb';
-    document.body.style.color = '#0f1828';
-    document.documentElement.style.backgroundColor = '#f5f7fb';
+    document.body.style.backgroundColor = '#030712'; // 深邃星空黑
     
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      // 恢复原来的样式
+      window.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
       document.body.style.backgroundColor = originalBodyBg;
-      document.body.style.color = originalBodyColor;
-      document.documentElement.style.backgroundColor = originalHtmlBg;
     };
   }, []);
 
   return (
-    <div className="landing-iso" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+    <div className="landing-iso">
       <style>{`
-        /* 完全隔离和重置 Landing 页面样式，避免被主题系统和 Semi Design 影响 */
+        /* --- 变量与基础重置 --- */
         .landing-iso {
-          --bg-main: #f5f7fb;
-          --bg-panel: #ffffff;
-          --bg-panel-soft: rgba(255, 255, 255, 0.76);
-          --ink-main: #0f1828;
-          --ink-soft: #556174;
-          --line-soft: rgba(20, 44, 80, 0.12);
-          --line-strong: rgba(20, 44, 80, 0.2);
-          --blue: #0c70f2;
-          --blue-glow: rgba(12, 112, 242, 0.33);
-          --dark: #0b0f17;
-          --dark-soft: #161f30;
-          --radius-xl: 40px;
-          --radius-lg: 28px;
-          --radius-md: 18px;
-          --shadow-card: 0 24px 64px rgba(13, 31, 58, 0.11);
-          --content-width: min(1120px, 92vw);
+          --bg-main: #030712;
+          --bg-panel: rgba(15, 23, 42, 0.4);
+          --ink-main: #f8fafc;
+          --ink-soft: #94a3b8;
+          --line-soft: rgba(255, 255, 255, 0.08);
+          --accent: #0c70f2;
+          --accent-hover: #3b82f6;
+          --accent-purple: #8b5cf6;
+          --content-width: 1200px;
+          --radius-lg: 24px;
+          --radius-xl: 32px;
+          --shadow-glow: 0 0 80px -20px rgba(12, 112, 242, 0.5);
+
           position: relative;
           min-height: 100vh;
           width: 100%;
-          margin: 0 !important;
-          padding: 0 !important;
+          margin: 0;
+          padding: 0;
           overflow-x: hidden;
           color: var(--ink-main);
-          background:
-            radial-gradient(circle at 12% 8%, rgba(61, 139, 255, 0.2), transparent 32%),
-            radial-gradient(circle at 86% 22%, rgba(141, 97, 255, 0.14), transparent 30%),
-            linear-gradient(180deg, #f8faff 0%, var(--bg-main) 40%, #f6f8fc 100%);
-          font-family: "Sora", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-          line-height: 1.45;
-          letter-spacing: 0.01em;
+          background-color: var(--bg-main);
+          font-family: "Inter", "Sora", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          line-height: 1.5;
+          -webkit-font-smoothing: antialiased;
         }
 
-        .landing-iso * {
+        .landing-iso *, .landing-iso *::before, .landing-iso *::after {
           box-sizing: border-box;
         }
 
@@ -210,1323 +215,1125 @@ const Landing = () => {
           text-decoration: none;
         }
 
-        .landing-iso__container {
-          width: var(--content-width);
-          margin: 0 auto;
+        /* 全局网格背景底纹 */
+        .landing-iso::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image: 
+            linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 40px 40px;
+          mask-image: radial-gradient(circle at 50% 20%, black 20%, transparent 80%);
+          -webkit-mask-image: radial-gradient(circle at 50% 20%, black 20%, transparent 80%);
+          pointer-events: none;
+          z-index: 0;
         }
 
+        .landing-iso__container {
+          width: 100%;
+          max-width: var(--content-width);
+          margin: 0 auto;
+          padding: 0 24px;
+          position: relative;
+          z-index: 10;
+        }
+
+        /* --- 滚动入场动画 --- */
+        .reveal {
+          opacity: 0;
+          transform: translateY(30px);
+          transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), 
+                      transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .reveal-active {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+
+        /* --- 导航栏 --- */
         .landing-iso__nav-wrap {
           position: fixed;
-          top: 18px;
+          top: 24px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 100;
-          width: var(--content-width);
+          width: 100%;
+          max-width: var(--content-width);
+          padding: 0 24px;
+          transition: top 0.3s;
         }
 
         .landing-iso__nav {
-          border: 1px solid rgba(255, 255, 255, 0.6);
+          /* 常驻毛玻璃效果 */
+          background: rgba(15, 23, 42, 0.4);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.45);
-          backdrop-filter: blur(14px);
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
-          padding: 10px 18px;
-          transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+          padding: 12px 24px;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
         }
 
         .landing-iso__nav.is-scrolled {
-          background: rgba(255, 255, 255, 0.82);
-          border-color: var(--line-soft);
-          box-shadow: 0 10px 34px rgba(8, 21, 39, 0.14);
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border-color: rgba(255, 255, 255, 0.15);
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+          padding: 10px 24px;
         }
 
         .landing-iso__brand {
           display: inline-flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           font-size: 1.1rem;
           font-weight: 800;
-          letter-spacing: -0.03em;
+          letter-spacing: -0.02em;
         }
 
         .landing-iso__brand-badge {
-          width: 32px;
-          height: 32px;
-          border-radius: 10px;
-          background: linear-gradient(145deg, #0b7df9 0%, #0b58db 100%);
-          color: #fff;
-          display: inline-flex;
+          display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.86rem;
-          box-shadow: 0 10px 20px rgba(13, 107, 239, 0.3);
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
+          background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+          color: white;
+          font-weight: 900;
+          font-size: 14px;
         }
 
         .landing-iso__menu {
-          display: inline-flex;
-          align-items: center;
+          display: flex;
           gap: 8px;
-          margin-left: auto;
-          margin-right: auto;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
         }
 
         .landing-iso__menu-link {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          padding: 9px 15px;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: var(--ink-soft);
+          padding: 8px 16px;
           border-radius: 999px;
-          background: rgba(255, 255, 255, 0.55);
-          border: 1px solid rgba(255, 255, 255, 0.78);
-          font-weight: 700;
-          color: #35435a;
-          transition: transform 180ms ease, background 180ms ease;
+          transition: all 0.2s;
         }
 
         .landing-iso__menu-link:hover {
-          transform: translateY(-1px);
-          background: #fff;
+          color: var(--ink-main);
+          background: rgba(255, 255, 255, 0.05);
         }
 
         .landing-iso__actions {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
+          display: flex;
+          gap: 12px;
         }
 
         .landing-iso__btn {
-          border: 0;
+          border: none;
           border-radius: 999px;
-          font: inherit;
+          font-weight: 600;
+          font-size: 0.85rem;
           cursor: pointer;
-          white-space: nowrap;
-          transition: transform 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          text-decoration: none;
+          transition: all 0.2s;
         }
 
         .landing-iso__btn--ghost {
           background: transparent;
-          padding: 10px 14px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #2d3a50;
+          color: var(--ink-main);
+          padding: 8px 16px;
         }
 
         .landing-iso__btn--ghost:hover {
-          color: #101925;
+          background: rgba(255, 255, 255, 0.08);
         }
 
         .landing-iso__btn--solid {
-          background: #0e1625 !important;
-          color: #fff !important;
-          padding: 10px 18px;
-          font-size: 0.75rem;
-          font-weight: 700;
-          box-shadow: 0 10px 22px rgba(11, 17, 30, 0.25);
+          background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+          color: #ffffff;
+          padding: 8px 20px;
+          box-shadow: 0 4px 15px rgba(12, 112, 242, 0.3);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .landing-iso__btn--solid:hover {
           transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         }
 
+        /* --- 英雄区域 (Hero) --- */
         .landing-iso__hero {
-          padding: 148px 0 34px;
           position: relative;
-          z-index: 10;
+          padding-top: 180px;
+          padding-bottom: 80px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          overflow: hidden;
         }
 
-        .landing-iso__hero-copy {
-          text-align: center;
-          max-width: 900px;
-          margin: 0 auto;
+        /* 顶部模糊光晕 */
+        .landing-iso__hero::before {
+          content: '';
+          position: absolute;
+          top: -20%;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 800px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(12, 112, 242, 0.15) 0%, rgba(138, 77, 255, 0.1) 40%, transparent 70%);
+          filter: blur(60px);
+          z-index: 0;
+          pointer-events: none;
         }
 
         .landing-iso__badge {
           display: inline-flex;
           align-items: center;
-          gap: 7px;
-          border: 1px solid #d5e8ff;
-          background: #edf5ff;
+          gap: 8px;
+          border: 1px solid rgba(59, 130, 246, 0.3);
+          background: rgba(59, 130, 246, 0.1);
+          padding: 6px 16px;
           border-radius: 999px;
-          padding: 6px 12px;
-          margin-bottom: 22px;
-          font-size: 0.64rem;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-          color: #0b69e4;
+          font-size: 0.75rem;
           font-weight: 700;
-          animation: landingIso-float 3.6s ease-in-out infinite;
+          color: #60a5fa;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-bottom: 24px;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+          backdrop-filter: blur(10px);
         }
 
         .landing-iso__icon-inline {
-          width: 13px;
-          height: 13px;
-          flex: 0 0 auto;
+          width: 14px;
+          height: 14px;
         }
 
         .landing-iso__hero-title {
-          margin: 0;
-          font-size: clamp(2.7rem, 7vw, 5.6rem);
-          line-height: 0.94;
-          letter-spacing: -0.048em;
-          font-weight: 900;
+          font-size: clamp(3rem, 6vw, 5.5rem);
+          font-weight: 800;
+          line-height: 1.1;
+          letter-spacing: -0.03em;
+          margin: 0 0 24px 0;
         }
 
         .landing-iso__title-gradient {
-          display: inline-block;
-          background: linear-gradient(90deg, #0c6df0 0%, #3f72ff 45%, #8a4dff 100%);
+          background: linear-gradient(135deg, #fff 0%, #94a3b8 50%, #60a5fa 100%);
           -webkit-background-clip: text;
-          background-clip: text;
           color: transparent;
         }
 
         .landing-iso__hero-desc {
-          max-width: 690px;
-          margin: 24px auto 0;
+          font-size: clamp(1rem, 2vw, 1.25rem);
           color: var(--ink-soft);
-          font-size: clamp(1rem, 2.5vw, 1.22rem);
-          line-height: 1.7;
-          font-weight: 500;
+          max-width: 600px;
+          margin: 0 auto 40px;
+          line-height: 1.6;
         }
 
-        .landing-iso__hero-desc em {
-          color: var(--ink-main);
-          font-style: normal;
-          font-weight: 800;
-          text-decoration: underline;
-          text-decoration-thickness: 2px;
-          text-decoration-color: #3f8eff;
-          text-underline-offset: 4px;
-        }
-
-        .landing-iso__hero-cta {
-          margin-top: 34px;
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .landing-iso__btn--hero-primary,
-        .landing-iso__btn--hero-secondary {
-          height: 54px;
-          padding: 0 28px;
-          border-radius: 18px;
-          font-size: 0.92rem;
-          font-weight: 700;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .landing-iso__btn--hero-primary {
-          background: linear-gradient(140deg, #0f7bfa 0%, #0a5cdd 100%);
-          color: #fff;
-          box-shadow: 0 20px 38px var(--blue-glow);
-        }
-
-        .landing-iso__btn--hero-primary:hover {
-          transform: translateY(-1px) scale(1.01);
-        }
-
-        .landing-iso__btn--hero-secondary {
-          border: 1px solid var(--line-soft);
-          background: #fff;
-          color: #162235;
-        }
-
-        .landing-iso__btn--hero-secondary:hover {
-          background: #f9fbff;
-        }
-
+        /* --- 轨道动画组件 (Orbit) --- */
         .landing-iso__orbit {
-          --orbit-radius: 215px;
-          margin: 28px auto 8px;
-          width: min(620px, 95vw);
-          height: 430px;
+          --orbit-radius: 240px;
           position: relative;
+          width: 100%;
+          max-width: 700px;
+          height: 480px;
+          margin: 0 auto;
           display: flex;
           align-items: center;
           justify-content: center;
-          pointer-events: none;
           z-index: 5;
+          pointer-events: none;
         }
 
         .landing-iso__orbit-core {
-          width: 94px;
-          height: 94px;
-          border-radius: 30px;
-          position: relative;
-          display: inline-flex;
+          width: 80px;
+          height: 80px;
+          border-radius: 24px;
+          background: linear-gradient(145deg, var(--accent), #0950b3);
+          display: flex;
           align-items: center;
           justify-content: center;
-          background: linear-gradient(145deg, #0d77f8 0%, #0a58db 100%);
-          border: 2px solid rgba(255, 255, 255, 0.35);
-          color: #fff;
-          font-size: 2rem;
+          color: white;
+          font-size: 1.8rem;
           font-weight: 900;
-          letter-spacing: -0.06em;
-          box-shadow: 0 0 45px rgba(12, 112, 242, 0.4);
-          z-index: 5;
-          animation: landingIso-pulse 2.5s ease-in-out infinite;
+          box-shadow: 0 0 40px rgba(12, 112, 242, 0.5), inset 0 2px 10px rgba(255,255,255,0.3);
+          position: relative;
+          z-index: 10;
         }
 
         .landing-iso__orbit-glow {
           position: absolute;
-          inset: -16px;
-          border-radius: 999px;
-          background: rgba(18, 127, 255, 0.28);
+          inset: -20px;
+          background: rgba(12, 112, 242, 0.4);
+          border-radius: 50%;
           filter: blur(20px);
           z-index: -1;
+          animation: pulse-glow 3s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+          0% { transform: scale(0.8); opacity: 0.5; }
+          100% { transform: scale(1.2); opacity: 0.8; }
         }
 
         .landing-iso__orbit-ring {
           position: absolute;
           border-radius: 50%;
-          border: 1px solid rgba(10, 101, 228, 0.16);
+          border: 1px dashed rgba(255, 255, 255, 0.1);
         }
 
         .landing-iso__orbit-ring--inner {
-          width: 320px;
-          height: 320px;
-          animation: landingIso-spin 18s linear infinite;
+          width: calc(var(--orbit-radius) * 1.3);
+          height: calc(var(--orbit-radius) * 1.3);
         }
 
         .landing-iso__orbit-ring--outer {
-          width: 510px;
-          height: 510px;
-          border-color: rgba(143, 115, 255, 0.13);
-          animation: landingIso-spin-reverse 24s linear infinite;
+          width: calc(var(--orbit-radius) * 2);
+          height: calc(var(--orbit-radius) * 2);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .landing-iso__satellite-container {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          /* 外层容器旋转 */
+          animation: orbit-spin 30s linear infinite;
         }
 
         .landing-iso__satellite {
           position: absolute;
-          top: 50%;
-          left: 50%;
-          transform-origin: center;
-          animation: landingIso-orbit 23s linear infinite;
+          top: 0;
+          left: 0;
+          /* 将元素推向轨道边缘并应用初始角度 */
+          transform: rotate(var(--start-angle)) translateX(var(--orbit-radius));
         }
 
         .landing-iso__satellite-pill {
-          transform: translate(-50%, -50%);
-          display: inline-flex;
+          /* 内层反向旋转，抵消外层旋转，使文字始终保持水平 */
+          animation: orbit-spin-reverse 30s linear infinite;
+          transform-origin: center;
+          
+          display: flex;
           align-items: center;
           gap: 8px;
-          padding: 9px 15px;
-          border-radius: 16px;
-          background: rgba(255, 255, 255, 0.92);
-          border: 1px solid rgba(255, 255, 255, 0.95);
-          box-shadow: 0 12px 24px rgba(15, 30, 51, 0.16);
-          color: #102038;
-          font-size: 0.78rem;
-          font-weight: 700;
-          letter-spacing: 0;
+          padding: 8px 16px;
+          background: rgba(15, 23, 42, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(10px);
+          border-radius: 999px;
+          color: white;
+          font-size: 0.8rem;
+          font-weight: 600;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+          /* 居中对齐处理 */
+          margin-top: -16px;
+          margin-left: -50%;
+          white-space: nowrap;
         }
 
         .landing-iso__satellite-dot {
-          width: 9px;
-          height: 9px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
           background: var(--orbit-color);
-          box-shadow: 0 0 12px var(--orbit-color);
-          flex: 0 0 auto;
+          box-shadow: 0 0 10px var(--orbit-color);
         }
 
+        @keyframes orbit-spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        @keyframes orbit-spin-reverse {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+
+        /* --- 标题与区块公用 --- */
         .landing-iso__section {
+          padding: 100px 0;
           position: relative;
           z-index: 10;
         }
 
         .landing-iso__section-title {
-          margin: 0;
+          font-size: clamp(2rem, 4vw, 2.5rem);
+          font-weight: 800;
           text-align: center;
-          font-size: clamp(2rem, 5vw, 3.2rem);
-          letter-spacing: -0.03em;
-          font-weight: 850;
+          margin: 0 0 16px;
+          letter-spacing: -0.02em;
         }
 
         .landing-iso__section-subtitle {
-          margin: 12px auto 0;
           text-align: center;
-          max-width: 630px;
           color: var(--ink-soft);
-          font-size: 1rem;
+          font-size: 1.1rem;
+          max-width: 600px;
+          margin: 0 auto 48px;
         }
 
+        /* --- 价格/方案卡片 --- */
         .landing-iso__pricing {
-          margin-top: 34px;
-          padding: 96px 0 110px;
-          border-top: 1px solid rgba(24, 53, 92, 0.07);
-          background: linear-gradient(180deg, rgba(255, 255, 255, 0.53) 0%, rgba(247, 250, 255, 0.86) 100%);
           position: relative;
-          z-index: 10;
+        }
+
+        .landing-iso__pricing::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
         }
 
         .landing-iso__cards {
-          margin-top: 44px;
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 22px;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 32px;
+          align-items: stretch;
         }
 
         .landing-iso__card {
-          position: relative;
+          background: var(--bg-panel);
+          border: 1px solid var(--line-soft);
           border-radius: var(--radius-xl);
-          padding: 34px 34px 30px;
-          min-height: 540px;
+          padding: 40px;
           display: flex;
           flex-direction: column;
-          border: 1px solid var(--line-soft);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+          position: relative;
+          overflow: hidden;
         }
 
-        .landing-iso__card--light {
-          background: var(--bg-panel);
-          box-shadow: var(--shadow-card);
+        .landing-iso__card:hover {
+          transform: translateY(-8px);
+          border-color: rgba(255, 255, 255, 0.2);
         }
 
         .landing-iso__card--dark {
-          background: linear-gradient(155deg, #080d16 0%, #111a2b 75%);
-          color: #fff;
-          border-color: rgba(255, 255, 255, 0.13);
-          box-shadow: 0 35px 90px rgba(6, 12, 22, 0.45);
+          background: linear-gradient(160deg, rgba(15, 23, 42, 0.8) 0%, rgba(3, 7, 18, 0.9) 100%);
+          border-color: rgba(139, 92, 246, 0.3);
         }
 
         .landing-iso__card--dark::before {
           content: '';
           position: absolute;
-          inset: -1px;
-          border-radius: var(--radius-xl);
-          background: linear-gradient(130deg, rgba(16, 132, 255, 0.5), rgba(142, 70, 255, 0.4));
-          z-index: -1;
-          filter: blur(22px);
-          opacity: 0.7;
+          top: 0; left: 0; right: 0; height: 2px;
+          background: linear-gradient(90deg, var(--accent), var(--accent-purple));
+          opacity: 0.8;
+        }
+
+        .landing-iso__card--dark:hover {
+          box-shadow: 0 20px 60px -10px rgba(139, 92, 246, 0.2);
+          border-color: rgba(139, 92, 246, 0.5);
         }
 
         .landing-iso__card-head {
           display: flex;
-          align-items: flex-start;
           justify-content: space-between;
-          gap: 18px;
-          margin-bottom: 26px;
+          align-items: flex-start;
+          margin-bottom: 24px;
         }
 
         .landing-iso__card-kicker {
-          font-size: 0.63rem;
+          font-size: 0.8rem;
           text-transform: uppercase;
-          letter-spacing: 0.16em;
-          font-weight: 800;
-          margin-bottom: 9px;
-          color: #2f7dfd;
+          letter-spacing: 0.1em;
+          color: var(--ink-soft);
+          font-weight: 700;
+          margin-bottom: 8px;
         }
-
+        
         .landing-iso__card--dark .landing-iso__card-kicker {
-          color: #67b8ff;
+          color: #a78bfa;
         }
 
         .landing-iso__card-title {
+          font-size: 2rem;
+          font-weight: 800;
           margin: 0;
-          font-size: 1.95rem;
-          letter-spacing: -0.03em;
-        }
-
-        .landing-iso__card-icon-box {
-          width: 52px;
-          height: 52px;
-          border-radius: 16px;
-          border: 1px solid var(--line-soft);
-          background: #f4f8ff;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .landing-iso__card--dark .landing-iso__card-icon-box {
-          border-color: rgba(255, 255, 255, 0.14);
-          background: rgba(255, 255, 255, 0.06);
         }
 
         .landing-iso__icon-lg {
-          width: 26px;
-          height: 26px;
-          color: #60718d;
+          width: 32px;
+          height: 32px;
+          color: var(--ink-main);
+          opacity: 0.8;
         }
 
         .landing-iso__card--dark .landing-iso__icon-lg {
-          color: #69b4ff;
+          color: #a78bfa;
+          opacity: 1;
         }
 
         .landing-iso__price-block {
-          margin-bottom: 26px;
+          margin-bottom: 32px;
         }
 
         .landing-iso__price-main {
-          font-size: 3.2rem;
-          font-weight: 900;
-          letter-spacing: -0.04em;
-          margin: 0;
+          font-size: 2.5rem;
+          font-weight: 800;
+          margin: 0 0 12px;
           line-height: 1;
         }
 
         .landing-iso__price-main small {
           font-size: 1rem;
-          color: inherit;
-          opacity: 0.52;
-          font-weight: 600;
+          color: var(--ink-soft);
+          font-weight: 500;
+          margin-left: 8px;
         }
 
         .landing-iso__card-copy {
-          margin: 12px 0 0;
-          color: #556174;
-          line-height: 1.7;
-        }
-
-        .landing-iso__card--dark .landing-iso__card-copy {
-          color: rgba(224, 232, 255, 0.65);
+          color: var(--ink-soft);
+          font-size: 0.95rem;
+          margin: 0;
         }
 
         .landing-iso__feature-list {
           list-style: none;
-          margin: 0;
           padding: 0;
-          display: grid;
-          gap: 12px;
+          margin: 0 0 40px 0;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
           flex: 1;
         }
 
         .landing-iso__feature-item {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 0.9rem;
-          font-weight: 700;
+          gap: 12px;
+          font-size: 0.95rem;
+          color: var(--ink-main);
         }
 
         .landing-iso__feature-icon-wrap {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(14, 109, 235, 0.1);
-          color: #0f71f0;
-          flex: 0 0 auto;
-        }
-
-        .landing-iso__feature-icon {
-          width: 15px;
-          height: 15px;
-        }
-
-        .landing-iso__card--dark .landing-iso__feature-icon-wrap {
-          background: rgba(78, 158, 255, 0.2);
-          color: #7ec0ff;
-        }
-
-        .landing-iso__card-cta {
-          margin-top: 22px;
-          height: 52px;
-          border-radius: 16px;
-          border: 0;
-          font: inherit;
-          font-weight: 800;
-          font-size: 0.9rem;
-          cursor: pointer;
-          transition: transform 180ms ease, background 180ms ease, color 180ms ease;
           display: flex;
           align-items: center;
           justify-content: center;
-          text-decoration: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+          flex-shrink: 0;
+        }
+
+        .landing-iso__card--dark .landing-iso__feature-icon-wrap {
+          background: rgba(139, 92, 246, 0.2);
+          color: #c4b5fd;
+        }
+
+        .landing-iso__feature-icon {
+          width: 14px;
+          height: 14px;
+        }
+
+        .landing-iso__card-cta {
+          display: block;
+          text-align: center;
+          padding: 16px;
+          border-radius: 12px;
+          font-weight: 700;
+          font-size: 1rem;
+          transition: all 0.2s;
+          cursor: pointer;
         }
 
         .landing-iso__card-cta--light {
-          background: #eff3fb;
-          color: #162238;
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--ink-main);
         }
 
         .landing-iso__card-cta--light:hover {
-          background: #0f72f2;
-          color: #fff;
+          background: rgba(255, 255, 255, 0.2);
         }
 
         .landing-iso__card-cta--dark {
-          background: linear-gradient(130deg, #0f79f9 0%, #0b62e4 100%);
-          color: #fff;
-          box-shadow: 0 16px 35px rgba(13, 105, 232, 0.45);
+          background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+          color: #ffffff;
+          box-shadow: 0 4px 20px -5px rgba(12, 112, 242, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .landing-iso__card-cta--dark:hover {
-          transform: translateY(-1px);
+          box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.5);
+          transform: translateY(-2px);
         }
 
-        .landing-iso__closed {
-          padding: 100px 0;
-          background: #fff;
-          border-top: 1px solid rgba(20, 44, 80, 0.08);
-          border-bottom: 1px solid rgba(20, 44, 80, 0.08);
+        /* --- 统计数据 --- */
+        .landing-iso__stats-section {
+          background: linear-gradient(to bottom, transparent, rgba(15, 23, 42, 0.5), transparent);
         }
 
+        .landing-iso__stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 24px;
+        }
+
+        .landing-iso__stat-card {
+          text-align: center;
+          padding: 32px 24px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+          transition: transform 0.3s;
+        }
+
+        .landing-iso__stat-card:hover {
+          transform: translateY(-5px);
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .landing-iso__stat-value {
+          font-size: 3rem;
+          font-weight: 900;
+          margin-bottom: 8px;
+          background: linear-gradient(to right, #fff, #94a3b8);
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+
+        .landing-iso__stat-value span {
+          font-size: 1.5rem;
+        }
+
+        .landing-iso__stat-label {
+          color: var(--ink-soft);
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        /* --- 无缝对接 (Marquee) --- */
+        .landing-iso__marquee-wrapper {
+          overflow: hidden;
+          padding: 40px 0;
+          position: relative;
+          mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+          -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        }
+
+        .landing-iso__marquee {
+          display: flex;
+          width: max-content;
+          animation: marquee 30s linear infinite;
+        }
+        
+        .landing-iso__marquee:hover {
+          animation-play-state: paused;
+        }
+
+        .landing-iso__integration-tag {
+          padding: 12px 24px;
+          margin: 0 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 999px;
+          font-weight: 600;
+          color: var(--ink-main);
+          font-size: 0.95rem;
+          display: inline-flex;
+          align-items: center;
+          transition: all 0.3s ease;
+          cursor: default;
+        }
+
+        .landing-iso__integration-tag:hover {
+          background: rgba(12, 112, 242, 0.1);
+          border-color: var(--accent);
+          color: #fff;
+          box-shadow: 0 0 15px rgba(12, 112, 242, 0.3);
+        }
+
+        @keyframes marquee {
+          to { transform: translateX(-50%); }
+        }
+
+        /* --- 核心能力左右分栏 --- */
         .landing-iso__split {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 44px;
+          gap: 60px;
           align-items: center;
         }
 
         .landing-iso__code-window {
-          position: relative;
-          border-radius: 34px;
-          background: linear-gradient(160deg, #f5f8ff 0%, #eef4ff 100%);
-          border: 1px solid rgba(22, 56, 98, 0.11);
-          padding: 26px;
-          box-shadow: var(--shadow-card);
+          background: #0f172a;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: var(--radius-lg);
+          padding: 24px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
           font-family: "Fira Code", "JetBrains Mono", monospace;
-          font-size: 0.84rem;
-          color: #29384f;
-          overflow: hidden;
+          font-size: 0.85rem;
+          color: #e2e8f0;
+          position: relative;
         }
 
-        .landing-iso__code-bg-icon {
+        .landing-iso__code-window::before {
+          content: '';
           position: absolute;
-          right: 10px;
-          top: 8px;
-          width: 140px;
-          height: 140px;
-          opacity: 0.06;
-          color: #17427b;
+          top: 0; left: 0; right: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
         }
 
         .landing-iso__code-dots {
           display: flex;
           gap: 8px;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
         }
 
         .landing-iso__code-dot {
-          width: 11px;
-          height: 11px;
-          border-radius: 50%;
+          width: 12px; height: 12px; border-radius: 50%;
         }
-
-        .landing-iso__code-dot--red { background: #ff6b6b; }
-        .landing-iso__code-dot--yellow { background: #ffbd4a; }
-        .landing-iso__code-dot--green { background: #14cc89; }
+        .landing-iso__code-dot--red { background: #ef4444; }
+        .landing-iso__code-dot--yellow { background: #eab308; }
+        .landing-iso__code-dot--green { background: #22c55e; }
 
         .landing-iso__code-line {
-          margin: 0;
-          line-height: 1.7;
-          white-space: nowrap;
+          margin: 8px 0;
+          line-height: 1.6;
         }
 
-        .landing-iso__code-keyword { color: #7950f2; }
-        .landing-iso__code-string { color: #0a9f74; }
-        .landing-iso__code-comment { color: #0b6ee8; }
+        .landing-iso__code-keyword { color: #c678dd; }
+        .landing-iso__code-string { color: #98c379; }
+        .landing-iso__code-comment { color: #5c6370; font-style: italic; }
+        .landing-iso__code-property { color: #e06c75; }
 
-        .landing-iso__progress {
-          margin-top: 8px;
-          width: 88%;
-          height: 7px;
-          border-radius: 999px;
-          background: rgba(44, 82, 129, 0.15);
-          overflow: hidden;
+        /* 闪烁光标 */
+        .landing-iso__cursor {
+          display: inline-block;
+          width: 8px;
+          height: 15px;
+          background: #61afef;
+          vertical-align: middle;
+          margin-left: 4px;
+          animation: blink 1s step-end infinite;
         }
 
-        .landing-iso__progress > span {
-          display: block;
-          height: 100%;
-          background: linear-gradient(90deg, #0e72f1 0%, #63a4ff 100%);
-          animation: landingIso-progress 2.8s ease-in-out infinite;
+        @keyframes blink {
+          50% { opacity: 0; }
         }
 
         .landing-iso__kicker {
           display: inline-block;
-          padding: 7px 12px;
-          border-radius: 10px;
-          background: #ebf4ff;
-          color: #0b70ec;
-          font-size: 0.62rem;
-          letter-spacing: 0.16em;
+          padding: 6px 14px;
+          border-radius: 8px;
+          background: rgba(12, 112, 242, 0.15);
+          color: #60a5fa;
+          font-size: 0.75rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
-          font-weight: 800;
           margin-bottom: 16px;
         }
 
         .landing-iso__headline {
-          margin: 0;
-          font-size: clamp(2rem, 4.6vw, 3rem);
-          line-height: 1.14;
-          letter-spacing: -0.035em;
+          font-size: clamp(2rem, 3.5vw, 2.5rem);
+          font-weight: 800;
+          line-height: 1.2;
+          margin: 0 0 16px;
         }
 
         .landing-iso__body {
-          margin-top: 18px;
           color: var(--ink-soft);
-          line-height: 1.76;
+          font-size: 1.1rem;
+          line-height: 1.7;
+          margin: 0 0 32px;
         }
 
         .landing-iso__mini-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 12px;
-          margin-top: 24px;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
         }
 
         .landing-iso__mini-card {
-          border-radius: 18px;
-          border: 1px solid var(--line-soft);
-          background: #f8fbff;
-          padding: 18px;
-          transition: border-color 180ms ease, transform 180ms ease;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 20px;
+          border-radius: 16px;
+          transition: all 0.3s ease;
         }
 
         .landing-iso__mini-card:hover {
-          border-color: #9bc5ff;
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.2);
           transform: translateY(-2px);
         }
 
         .landing-iso__mini-icon {
-          width: 24px;
-          height: 24px;
-          color: #0d70ee;
-          margin-bottom: 8px;
+          width: 28px; height: 28px;
+          color: var(--accent);
+          margin-bottom: 12px;
         }
 
         .landing-iso__mini-title {
-          margin: 0;
-          font-size: 0.92rem;
-          font-weight: 800;
+          font-size: 1.05rem;
+          font-weight: 700;
+          margin: 0 0 6px;
         }
 
         .landing-iso__mini-text {
-          margin: 3px 0 0;
-          font-size: 0.76rem;
-          color: #6b7d95;
-        }
-
-        .landing-iso__opensource {
-          padding: 100px 0;
-          position: relative;
-          background: linear-gradient(165deg, #070d17 0%, #0f1728 58%, #0b1423 100%);
-          color: #fff;
-          overflow: hidden;
-        }
-
-        .landing-iso__opensource::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          opacity: 0.12;
-          background:
-            repeating-linear-gradient(
-              to bottom,
-              transparent 0,
-              transparent 3px,
-              rgba(105, 133, 184, 0.35) 3px,
-              rgba(105, 133, 184, 0.35) 4px
-            );
-          pointer-events: none;
-        }
-
-        .landing-iso__section-subtitle--light {
-          color: rgba(226, 237, 255, 0.66);
-        }
-
-        .landing-iso__tri-grid {
-          margin-top: 48px;
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 16px;
-        }
-
-        .landing-iso__dark-card {
-          border-radius: 26px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(8px);
-          padding: 26px;
-          transition: transform 180ms ease, background 180ms ease;
-        }
-
-        .landing-iso__dark-card:hover {
-          transform: translateY(-2px);
-          background: rgba(255, 255, 255, 0.09);
-        }
-
-        .landing-iso__dark-icon {
-          width: 32px;
-          height: 32px;
-          margin-bottom: 16px;
-          color: #73b7ff;
-        }
-
-        .landing-iso__dark-card:nth-child(2) .landing-iso__dark-icon {
-          color: #bc8bff;
-        }
-
-        .landing-iso__dark-card:nth-child(3) .landing-iso__dark-icon {
-          color: #56d39c;
-        }
-
-        .landing-iso__dark-title {
+          color: var(--ink-soft);
+          font-size: 0.85rem;
           margin: 0;
-          font-size: 1.5rem;
-          letter-spacing: -0.02em;
         }
 
-        .landing-iso__dark-copy {
-          margin: 10px 0 0;
-          color: rgba(224, 235, 255, 0.68);
-          line-height: 1.74;
-          font-size: 0.9rem;
-        }
-
-        .landing-iso__subscription-plans {
-          padding: 90px 0;
-          background: #fff;
-        }
-
-        .landing-iso__plan-cards {
-          margin-top: 48px;
+        /* --- 三列特色 (Tri Grid) --- */
+        .landing-iso__tri-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 24px;
         }
 
-        .landing-iso__plan-card {
-          position: relative;
-          border-radius: 24px;
-          border: 1px solid rgba(20, 44, 80, 0.12);
-          background: #fff;
-          padding: 32px 28px;
-          transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+        .landing-iso__dark-card {
+          background: rgba(15, 23, 42, 0.4);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: var(--radius-lg);
+          padding: 32px;
+          transition: all 0.3s ease;
         }
 
-        .landing-iso__plan-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 48px rgba(13, 31, 58, 0.15);
-          border-color: #0c70f2;
+        .landing-iso__dark-card:hover {
+          transform: translateY(-5px);
+          background: rgba(30, 41, 59, 0.5);
+          border-color: rgba(255, 255, 255, 0.2);
         }
 
-        .landing-iso__plan-card--featured {
-          border: 2px solid #0c70f2;
-          background: linear-gradient(180deg, #f8fbff 0%, #fff 100%);
-          box-shadow: 0 16px 40px rgba(12, 112, 242, 0.18);
-        }
-
-        .landing-iso__plan-popular {
-          position: absolute;
-          top: -12px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: linear-gradient(135deg, #0c70f2 0%, #0a58db 100%);
-          color: #fff;
-          padding: 6px 16px;
-          border-radius: 999px;
-          font-size: 0.7rem;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          box-shadow: 0 8px 20px rgba(12, 112, 242, 0.35);
-        }
-
-        .landing-iso__plan-badge-top {
-          position: absolute;
-          top: -12px;
-          right: 20px;
-          background: linear-gradient(135deg, #ff6b6b 0%, #ff4d4f 100%);
-          color: #fff;
-          padding: 6px 14px;
-          border-radius: 999px;
-          font-size: 0.7rem;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          box-shadow: 0 8px 20px rgba(255, 77, 79, 0.35);
-        }
-
-        .landing-iso__plan-header {
-          display: flex;
-          align-items: center;
-          gap: 14px;
+        .landing-iso__dark-icon {
+          width: 36px; height: 36px;
           margin-bottom: 20px;
+          color: #60a5fa;
         }
+        
+        .landing-iso__dark-card:nth-child(2) .landing-iso__dark-icon { color: #a78bfa; }
+        .landing-iso__dark-card:nth-child(3) .landing-iso__dark-icon { color: #34d399; }
 
-        .landing-iso__plan-icon {
-          width: 48px;
-          height: 48px;
-          border-radius: 14px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .landing-iso__icon-md {
-          width: 24px;
-          height: 24px;
-          color: #fff;
-        }
-
-        .landing-iso__plan-name {
-          margin: 0;
-          font-size: 1.5rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-        }
-
-        .landing-iso__plan-price {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-          flex-wrap: wrap;
-          margin-bottom: 8px;
-        }
-
-        .landing-iso__plan-symbol {
-          font-size: 1.2rem;
+        .landing-iso__dark-title {
+          font-size: 1.25rem;
           font-weight: 700;
-          color: var(--ink-main);
+          margin: 0 0 12px;
         }
 
-        .landing-iso__plan-amount {
-          font-size: 3.2rem;
-          font-weight: 900;
-          letter-spacing: -0.04em;
-          color: var(--ink-main);
-        }
-
-        .landing-iso__plan-period {
-          font-size: 1rem;
+        .landing-iso__dark-copy {
           color: var(--ink-soft);
-          font-weight: 600;
-        }
-
-        .landing-iso__plan-badge {
-          background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
-          color: #fff;
-          padding: 4px 10px;
-          border-radius: 8px;
-          font-size: 0.65rem;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          margin-left: 8px;
-        }
-
-        .landing-iso__plan-original {
-          font-size: 0.85rem;
-          margin-bottom: 16px;
-          color: #666;
-        }
-
-        .landing-iso__plan-desc {
-          margin: 8px 0 4px;
-          font-size: 0.9rem;
-          color: var(--ink-main);
-          font-weight: 600;
-        }
-
-        .landing-iso__plan-subdesc {
-          margin: 0 0 20px;
-          font-size: 0.82rem;
-          color: var(--ink-soft);
-        }
-
-        .landing-iso__plan-btn {
-          width: 100%;
-          height: 48px;
-          border-radius: 14px;
-          border: 0;
-          font: inherit;
-          font-weight: 800;
           font-size: 0.95rem;
-          cursor: pointer;
-          transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
-          margin-bottom: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          text-decoration: none;
-        }
-
-        .landing-iso__plan-btn--outline {
-          background: #fff;
-          border: 2px solid var(--line-strong);
-          color: var(--ink-main);
-        }
-
-        .landing-iso__plan-btn--outline:hover {
-          background: #f8fbff;
-          border-color: #0c70f2;
-          color: #0c70f2;
-        }
-
-        .landing-iso__plan-btn--solid {
-          background: linear-gradient(135deg, #0c70f2 0%, #0a58db 100%);
-          color: #fff;
-          box-shadow: 0 12px 28px rgba(12, 112, 242, 0.35);
-        }
-
-        .landing-iso__plan-btn--solid:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 16px 36px rgba(12, 112, 242, 0.45);
-        }
-
-        .landing-iso__plan-btn--premium {
-          background: linear-gradient(135deg, #ffa940 0%, #ff7a45 100%);
-          color: #fff;
-          box-shadow: 0 12px 28px rgba(255, 122, 69, 0.35);
-        }
-
-        .landing-iso__plan-btn--premium:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 16px 36px rgba(255, 122, 69, 0.45);
-        }
-
-        .landing-iso__plan-quota {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 16px;
-          border-radius: 12px;
-          background: rgba(12, 112, 242, 0.08);
-          margin-bottom: 20px;
-          font-size: 0.82rem;
-          font-weight: 700;
-          color: #0c70f2;
-        }
-
-        .landing-iso__icon-sm {
-          width: 18px;
-          height: 18px;
-          flex-shrink: 0;
-        }
-
-        .landing-iso__plan-features {
-          list-style: none;
-          padding: 0;
+          line-height: 1.6;
           margin: 0;
         }
 
-        .landing-iso__plan-features li {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-          margin-bottom: 12px;
-          font-size: 0.85rem;
-          line-height: 1.5;
-          color: var(--ink-soft);
-        }
-
-        .landing-iso__check-icon {
-          width: 18px;
-          height: 18px;
-          flex-shrink: 0;
-          color: #52c41a;
-          margin-top: 2px;
-        }
-
+        /* --- 页脚 --- */
         .landing-iso__footer {
-          border-top: 1px solid rgba(23, 47, 81, 0.09);
-          background: #fff;
-          padding: 62px 0 36px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          padding: 60px 0 40px;
+          margin-top: 60px;
         }
 
         .landing-iso__footer-main {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          gap: 18px;
+          margin-bottom: 40px;
           flex-wrap: wrap;
+          gap: 24px;
         }
 
         .landing-iso__footer-links {
-          display: inline-flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 18px;
-          font-size: 0.66rem;
-          text-transform: uppercase;
-          letter-spacing: 0.13em;
-          color: #71829a;
-          font-weight: 700;
+          display: flex;
+          gap: 24px;
+        }
+
+        .landing-iso__footer-links a {
+          color: var(--ink-soft);
+          font-size: 0.9rem;
+          font-weight: 500;
+          transition: color 0.2s;
         }
 
         .landing-iso__footer-links a:hover {
-          color: #0d70ee;
+          color: var(--ink-main);
         }
 
         .landing-iso__footer-status {
-          font-family: "Fira Code", "JetBrains Mono", monospace;
-          font-size: 0.64rem;
-          letter-spacing: 0.09em;
-          color: #9aabc0;
+          font-family: monospace;
+          font-size: 0.8rem;
+          color: #10b981;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .landing-iso__footer-status::before {
+          content: '';
+          display: block;
+          width: 8px; height: 8px;
+          background: #10b981;
+          border-radius: 50%;
+          box-shadow: 0 0 10px #10b981;
+          animation: blink 2s infinite;
         }
 
         .landing-iso__copyright {
-          margin-top: 28px;
           text-align: center;
-          font-size: 0.61rem;
-          text-transform: uppercase;
-          letter-spacing: 0.2em;
-          color: #9fb0c5;
-          font-weight: 700;
+          color: rgba(255, 255, 255, 0.3);
+          font-size: 0.85rem;
         }
 
-        @keyframes landingIso-float {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-3px);
-          }
+        /* --- 响应式 --- */
+        @media (max-width: 1024px) {
+          .landing-iso__split { grid-template-columns: 1fr; gap: 40px; }
+          .landing-iso__split > div:first-child { order: 2; }
+          .landing-iso__split > div:last-child { order: 1; }
         }
 
-        @keyframes landingIso-pulse {
-          0%,
-          100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.04);
-          }
+        @media (max-width: 900px) {
+          .landing-iso__menu { display: none; }
+          .landing-iso__cards { grid-template-columns: 1fr; max-width: 500px; margin: 0 auto; }
+          .landing-iso__tri-grid { grid-template-columns: 1fr; }
+          .landing-iso__stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .landing-iso__footer-main { flex-direction: column; text-align: center; }
         }
 
-        @keyframes landingIso-spin {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes landingIso-spin-reverse {
-          from {
-            transform: rotate(360deg);
-          }
-          to {
-            transform: rotate(0deg);
-          }
-        }
-
-        @keyframes landingIso-orbit {
-          from {
-            transform: rotate(var(--orbit-angle)) translate(var(--orbit-radius)) rotate(calc(-1 * var(--orbit-angle)));
-          }
-          to {
-            transform: rotate(calc(360deg + var(--orbit-angle))) translate(var(--orbit-radius)) rotate(calc(-360deg - var(--orbit-angle)));
-          }
-        }
-
-        @keyframes landingIso-progress {
-          0% {
-            width: 35%;
-          }
-          50% {
-            width: 92%;
-          }
-          100% {
-            width: 65%;
-          }
-        }
-
-        @media (max-width: 1080px) {
-          .landing-iso__menu {
-            display: none;
-          }
-
-          .landing-iso__cards,
-          .landing-iso__split,
-          .landing-iso__tri-grid,
-          .landing-iso__plan-cards {
-            grid-template-columns: 1fr;
-          }
-
-          .landing-iso__card {
-            min-height: 0;
-          }
-
-          .landing-iso__hero {
-            padding-top: 132px;
-          }
-
-          .landing-iso__orbit {
-            --orbit-radius: 176px;
-            height: 385px;
-          }
-
-          .landing-iso__orbit-ring--outer {
-            width: 420px;
-            height: 420px;
-          }
-
-          .landing-iso__satellite-pill {
-            font-size: 0.73rem;
-            padding: 8px 11px;
-          }
-        }
-
-        @media (max-width: 760px) {
-          .landing-iso {
-            --content-width: min(1120px, 94vw);
-          }
-
-          .landing-iso__nav-wrap {
-            top: 12px;
-          }
-
-          .landing-iso__nav {
-            padding: 8px 10px;
-          }
-
-          .landing-iso__actions {
-            gap: 2px;
-          }
-
-          .landing-iso__btn--ghost,
-          .landing-iso__btn--solid {
-            padding-inline: 11px;
-            font-size: 0.67rem;
-          }
-
-          .landing-iso__hero {
-            padding-top: 120px;
-          }
-
-          .landing-iso__hero-desc {
-            font-size: 0.95rem;
-          }
-
-          .landing-iso__orbit {
-            --orbit-radius: 142px;
-            height: 340px;
-          }
-
-          .landing-iso__orbit-ring--inner {
-            width: 250px;
-            height: 250px;
-          }
-
-          .landing-iso__orbit-ring--outer {
-            width: 330px;
-            height: 330px;
-          }
-
-          .landing-iso__satellite-pill {
-            font-size: 0.67rem;
-            padding: 7px 10px;
-            box-shadow: 0 9px 18px rgba(15, 30, 51, 0.14);
-          }
-
-          .landing-iso__pricing,
-          .landing-iso__closed,
-          .landing-iso__opensource,
-          .landing-iso__subscription-plans {
-            padding: 72px 0;
-          }
-
-          .landing-iso__card,
-          .landing-iso__dark-card,
-          .landing-iso__code-window,
-          .landing-iso__plan-card {
-            border-radius: 24px;
-            padding: 22px;
-          }
-
-          .landing-iso__mini-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .landing-iso__footer {
-            padding: 48px 0 28px;
-          }
-
-          .landing-iso__footer-main {
-            justify-content: center;
-            text-align: center;
-          }
+        @media (max-width: 600px) {
+          .landing-iso__hero { padding-top: 140px; }
+          .landing-iso__hero-title { font-size: 2.5rem; }
+          .landing-iso__stats-grid { grid-template-columns: 1fr; }
+          .landing-iso__mini-grid { grid-template-columns: 1fr; }
+          .landing-iso__orbit { transform: scale(0.7); height: 320px; }
         }
       `}</style>
 
+      {/* 导航栏 */}
       <div className="landing-iso__nav-wrap">
         <nav className={`landing-iso__nav ${scrolled ? 'is-scrolled' : ''}`}>
-          <a href="#" className="landing-iso__brand">
+          <a href="/index" className="landing-iso__brand">
             <span className="landing-iso__brand-badge">F</span>
-            <span>frog-api</span>
+            <span>Frog API</span>
           </a>
 
           <div className="landing-iso__menu">
-            <a href="/pricing" className="landing-iso__menu-link">
-              价格详情
-            </a>
-            <a href="/console" className="landing-iso__menu-link">
-              控制台
-            </a>
-            <a href="#API文档" className="landing-iso__menu-link">
-              API文档
-            </a>
+            <a href="/pricing" className="landing-iso__menu-link">价格方案</a>
+            <a href="/features" className="landing-iso__menu-link">核心能力</a>
+            <a href="/docs" className="landing-iso__menu-link">API 文档</a>
           </div>
 
           <div className="landing-iso__actions">
-            <a href="/login" className="landing-iso__btn landing-iso__btn--ghost">
-              登录
-            </a>
-            <a href="/register" className="landing-iso__btn landing-iso__btn--solid">
-              注册
-            </a>
+            <a href="/login" className="landing-iso__btn landing-iso__btn--ghost">登录</a>
+            <a href="/register" className="landing-iso__btn landing-iso__btn--solid">立即注册</a>
           </div>
         </nav>
       </div>
 
+      {/* Hero 区域 */}
       <header className="landing-iso__hero">
-        <div className="landing-iso__container landing-iso__hero-copy">
-          <div className="landing-iso__badge">
-            <IconPulse className="landing-iso__icon-inline" />
-            <span>All Models Online</span>
+        <div className="landing-iso__container">
+          <div className="reveal">
+            <div className="landing-iso__badge">
+              <IconPulse className="landing-iso__icon-inline" />
+              <span>Enterprise AI Gateway</span>
+            </div>
+            <h1 className="landing-iso__hero-title">
+              专精 GPT 模型的
+              <br />
+              <span className="landing-iso__title-gradient">高可用聚合中转站</span>
+            </h1>
+            <p className="landing-iso__hero-desc">
+              统一 OpenAI 协议入口，完美支持 gpt-5.x 系列及 Codex 等核心模型。<br />
+              从开发调试到生产流量，提供低延迟、防封锁、完全可观测的 API 调用体验。
+            </p>
           </div>
-
-          <h1 className="landing-iso__hero-title">
-            你的 AI 模型
-            <br />
-            <span className="landing-iso__title-gradient">超级枢纽</span>
-          </h1>
-
-          <p className="landing-iso__hero-desc">
-            开源模型 <em>4小时循环重置</em> 机制。<br />
-            不仅仅是接口转发，更是为您打造的无限灵感引擎。
-          </p>
         </div>
 
-        <Orbit />
+        <div className="reveal reveal-delay-2">
+          <Orbit />
+        </div>
       </header>
 
-      <section id="订阅中心" className="landing-iso__section landing-iso__pricing">
+      {/* 统计数据 */}
+      <section className="landing-iso__section landing-iso__stats-section reveal">
         <div className="landing-iso__container">
-          <h2 className="landing-iso__section-title">订阅中心</h2>
-          <p className="landing-iso__section-subtitle">技术感十足的定价策略，满足不同阶段的开发需求</p>
+          <div className="landing-iso__stats-grid">
+            <div className="landing-iso__stat-card">
+              <div className="landing-iso__stat-value">99.99<span>%</span></div>
+              <div className="landing-iso__stat-label">SLA 服务可用性</div>
+            </div>
+            <div className="landing-iso__stat-card">
+              <div className="landing-iso__stat-value">&lt;30<span>ms</span></div>
+              <div className="landing-iso__stat-label">网关层处理延迟</div>
+            </div>
+            <div className="landing-iso__stat-card">
+              <div className="landing-iso__stat-value">1:1</div>
+              <div className="landing-iso__stat-label">原生协议无损兼容</div>
+            </div>
+            <div className="landing-iso__stat-card">
+              <div className="landing-iso__stat-value">24/7</div>
+              <div className="landing-iso__stat-label">全球多节点路由兜底</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 跑马灯集成展示 */}
+      <section className="landing-iso__section reveal" style={{ padding: '60px 0' }}>
+        <div className="landing-iso__container">
+          <h2 className="landing-iso__section-title" style={{ fontSize: '1.5rem', color: 'var(--ink-soft)' }}>
+            一次配置，无缝对接现有生态
+          </h2>
+        </div>
+        <div className="landing-iso__marquee-wrapper">
+          <div className="landing-iso__marquee">
+            {/* 列表重复两遍以实现无缝滚动 */}
+            {['OpenAI SDK', 'LangChain', 'LlamaIndex', 'Next.js AI SDK', 'Cursor', 'Cline', 'Chatbox', 'Cherry Studio',
+              'OpenAI SDK', 'LangChain', 'LlamaIndex', 'Next.js AI SDK', 'Cursor', 'Cline', 'Chatbox', 'Cherry Studio'].map((tag, i) => (
+              <span key={i} className="landing-iso__integration-tag">{tag}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 特性详情展示 */}
+      <section id="features" className="landing-iso__section">
+        <div className="landing-iso__container landing-iso__split reveal">
+          <div className="landing-iso__code-window">
+            <div className="landing-iso__code-dots">
+              <span className="landing-iso__code-dot landing-iso__code-dot--red" />
+              <span className="landing-iso__code-dot landing-iso__code-dot--yellow" />
+              <span className="landing-iso__code-dot landing-iso__code-dot--green" />
+            </div>
+            <p className="landing-iso__code-line landing-iso__code-comment"># Python 环境无缝切换</p>
+            <p className="landing-iso__code-line">
+              <span className="landing-iso__code-keyword">import</span> os
+            </p>
+            <p className="landing-iso__code-line">
+              <span className="landing-iso__code-keyword">from</span> openai <span className="landing-iso__code-keyword">import</span> OpenAI
+            </p>
+            <br />
+            <p className="landing-iso__code-line landing-iso__code-comment"># 只需修改 BaseURL 和 Token</p>
+            <p className="landing-iso__code-line">
+              client = OpenAI(
+            </p>
+            <p className="landing-iso__code-line">
+              &nbsp;&nbsp;<span className="landing-iso__code-property">api_key</span>=<span className="landing-iso__code-string">"sk-frog-xxxxxx"</span>,
+            </p>
+            <p className="landing-iso__code-line">
+              &nbsp;&nbsp;<span className="landing-iso__code-property">base_url</span>=<span className="landing-iso__code-string">"https://api.frog.com/v1"</span>
+            </p>
+            <p className="landing-iso__code-line">
+              )
+            </p>
+            <br/>
+            <p className="landing-iso__code-line">
+              response = client.chat.completions.create(
+            </p>
+            <p className="landing-iso__code-line">
+              &nbsp;&nbsp;<span className="landing-iso__code-property">model</span>=<span className="landing-iso__code-string">"gpt-5.3-codex"</span>,<span className="landing-iso__cursor"></span>
+            </p>
+          </div>
+
+          <div>
+            <span className="landing-iso__kicker">Frog AI Engine</span>
+            <h2 className="landing-iso__headline">极简接入：稳定、兼容、可观测</h2>
+            <p className="landing-iso__body">
+              我们专注于 GPT 模型 API 的聚合代理，统一标准协议入口，专供全系列 GPT 与 Codex 接口。在高并发场景下依然保持低抖动和极高成功率。
+            </p>
+
+            <div className="landing-iso__mini-grid">
+              <article className="landing-iso__mini-card">
+                <IconGlobe className="landing-iso__mini-icon" />
+                <h4 className="landing-iso__mini-title">全球加速</h4>
+                <p className="landing-iso__mini-text">美/亚/欧多可用区节点，就近动态路由解析</p>
+              </article>
+
+              <article className="landing-iso__mini-card">
+                <IconShield className="landing-iso__mini-icon" />
+                <h4 className="landing-iso__mini-title">精准流控</h4>
+                <p className="landing-iso__mini-text">多维度 Token 对账，支持 IP/密钥级限流防刷</p>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 核心能力三栏 */}
+      <section className="landing-iso__section reveal">
+        <div className="landing-iso__container">
+          <h2 className="landing-iso__section-title">企业级代理能力</h2>
+          <p className="landing-iso__section-subtitle">
+            不仅仅是转发，我们围绕稳定性、安全性与成本效率，提供了完整的网关治理体系。
+          </p>
+
+          <div className="landing-iso__tri-grid">
+            <article className="landing-iso__dark-card reveal reveal-delay-1">
+              <IconRefresh className="landing-iso__dark-icon" />
+              <h3 className="landing-iso__dark-title">智能重试与熔断</h3>
+              <p className="landing-iso__dark-copy">
+                内置上游健康检查与自动容灾机制。遇到限流或超时，毫秒级自动切换备用通道，业务零感知。
+              </p>
+            </article>
+
+            <article className="landing-iso__dark-card reveal reveal-delay-2">
+              <IconCode className="landing-iso__dark-icon" />
+              <h3 className="landing-iso__dark-title">全景数据分析</h3>
+              <p className="landing-iso__dark-copy">
+                提供细粒度到请求级的可视化仪表盘。实时监控 QPS、延迟分布与 Token 成本流水，杜绝糊涂账。
+              </p>
+            </article>
+
+            <article className="landing-iso__dark-card reveal reveal-delay-3">
+              <IconGauge className="landing-iso__dark-icon" />
+              <h3 className="landing-iso__dark-title">性能极致优化</h3>
+              <p className="landing-iso__dark-copy">
+                自研 Rust 网关核心，支持连接池复用与流式传输 (Stream) 优化，首字响应时间 (TTFT) 降低 30%。
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      {/* 订阅/价格套餐 */}
+      <section id="pricing" className="landing-iso__section landing-iso__pricing reveal">
+        <div className="landing-iso__container">
+          <h2 className="landing-iso__section-title">灵活的接入方案</h2>
+          <p className="landing-iso__section-subtitle">无论是个人极客还是大型企业，都能找到最匹配的引擎</p>
 
           <div className="landing-iso__cards">
-            <article className="landing-iso__card landing-iso__card--light">
+            {/* 标准版卡片 */}
+            <article className="landing-iso__card">
               <div className="landing-iso__card-head">
                 <div>
-                  <div className="landing-iso__card-kicker">Enterprise Closed-Source</div>
-                  <h3 className="landing-iso__card-title">按量计费</h3>
+                  <div className="landing-iso__card-kicker">Pay As You Go</div>
+                  <h3 className="landing-iso__card-title">开发者按量</h3>
                 </div>
-                <span className="landing-iso__card-icon-box">
-                  <IconDatabase className="landing-iso__icon-lg" />
-                </span>
+                <IconDatabase className="landing-iso__icon-lg" />
               </div>
 
               <div className="landing-iso__price-block">
-                <p className="landing-iso__price-main">灵活 <small>充值</small></p>
+                <p className="landing-iso__price-main">$0 <small>起充即用</small></p>
                 <p className="landing-iso__card-copy">
-                  专为高精度需求设计。提供 <strong>全系列顶级闭源模型</strong> (GPT-4o/Claude) 的 1:1 转发。
+                  面向个人与独立开发者，提供标准共享链路，随用随付，不设资源下限。
                 </p>
               </div>
 
@@ -1542,30 +1349,29 @@ const Landing = () => {
               </ul>
 
               <a href="/console" className="landing-iso__card-cta landing-iso__card-cta--light">
-                立即充值
+                创建 API Key
               </a>
             </article>
 
+            {/* 企业版卡片 */}
             <article className="landing-iso__card landing-iso__card--dark">
               <div className="landing-iso__card-head">
                 <div>
-                  <div className="landing-iso__card-kicker">High-Performance Open-Source</div>
-                  <h3 className="landing-iso__card-title">Code Plan</h3>
+                  <div className="landing-iso__card-kicker">Enterprise</div>
+                  <h3 className="landing-iso__card-title">企业专线</h3>
                 </div>
-                <span className="landing-iso__card-icon-box">
-                  <IconCrown className="landing-iso__icon-lg" />
-                </span>
+                <IconCrown className="landing-iso__icon-lg" />
               </div>
 
               <div className="landing-iso__price-block">
-                <p className="landing-iso__price-main">按需订阅 <small>灵活计费</small></p>
+                <p className="landing-iso__price-main">定制包月 <small>更高 SLA</small></p>
                 <p className="landing-iso__card-copy">
-                  专为开源生态优化。支持 <strong>Llama/DeepSeek/Qwen</strong> 等最新强开源模型循环刷新。
+                  面向生产级业务，分配独立机房出口 IP，独享带宽与专属技术群支持。
                 </p>
               </div>
 
               <ul className="landing-iso__feature-list">
-                {CODE_PLAN_FEATURES.map((feature) => (
+                {ENTERPRISE_FEATURES.map((feature) => (
                   <li key={feature} className="landing-iso__feature-item">
                     <span className="landing-iso__feature-icon-wrap">
                       <IconBolt className="landing-iso__feature-icon" />
@@ -1575,241 +1381,34 @@ const Landing = () => {
                 ))}
               </ul>
 
-              <a href="/console" className="landing-iso__card-cta landing-iso__card-cta--dark">
-                开启专业之路
+              <a href="/contact" className="landing-iso__card-cta landing-iso__card-cta--dark">
+                咨询企业架构师
               </a>
             </article>
           </div>
         </div>
       </section>
 
-      <section className="landing-iso__section landing-iso__subscription-plans">
-        <div className="landing-iso__container">
-          <h2 className="landing-iso__section-title">灵活订阅方案</h2>
-          <p className="landing-iso__section-subtitle">选择最适合您的订阅周期，享受长期优惠</p>
-
-          <div className="landing-iso__plan-cards">
-            <article className="landing-iso__plan-card">
-              <div className="landing-iso__plan-header">
-                <div className="landing-iso__plan-icon">
-                  <IconDatabase className="landing-iso__icon-md" />
-                </div>
-                <h3 className="landing-iso__plan-name">入门版</h3>
-              </div>
-
-              <div className="landing-iso__plan-price">
-                <span className="landing-iso__plan-symbol">¥</span>
-                <span className="landing-iso__plan-amount">18</span>
-                <span className="landing-iso__plan-period">/月</span>
-                <span className="landing-iso__plan-badge">新春特惠立享5折</span>
-              </div>
-
-              <div className="landing-iso__plan-original">
-                原价: <span style={{ textDecoration: 'line-through' }}>¥36/月</span>
-                <span style={{ color: '#ff4d4f', marginLeft: '8px' }}>立省 ¥18.00/月</span>
-              </div>
-
-              <p className="landing-iso__plan-desc">支持按月订阅，随时取消</p>
-              <p className="landing-iso__plan-subdesc">适合个人开发者的轻量使用</p>
-
-              <a href="/console" className="landing-iso__plan-btn landing-iso__plan-btn--outline">开始使用</a>
-
-              <div className="landing-iso__plan-quota">
-                <IconBolt className="landing-iso__icon-sm" />
-                <span>每 4 小时 100 Prompts 配额</span>
-              </div>
-
-              <ul className="landing-iso__plan-features">
-                <li><IconCheck className="landing-iso__check-icon" /> 高质量开源模型，覆盖主流编码场景</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 稳定响应速度，持续在线可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 兼容 10+ 主流 AI 编码工具</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 模型能力持续更新，长期可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 资源包折扣取整: 9 折</li>
-              </ul>
-            </article>
-
-            <article className="landing-iso__plan-card landing-iso__plan-card--featured">
-              <div className="landing-iso__plan-popular">最受欢迎 ⚡</div>
-              <div className="landing-iso__plan-header">
-                <div className="landing-iso__plan-icon">
-                  <IconLayers className="landing-iso__icon-md" />
-                </div>
-                <h3 className="landing-iso__plan-name">专业版</h3>
-              </div>
-
-              <div className="landing-iso__plan-price">
-                <span className="landing-iso__plan-symbol">¥</span>
-                <span className="landing-iso__plan-amount">90</span>
-                <span className="landing-iso__plan-period">/月</span>
-                <span className="landing-iso__plan-badge">新春特惠立享5折</span>
-              </div>
-
-              <div className="landing-iso__plan-original">
-                原价: <span style={{ textDecoration: 'line-through' }}>¥180/月</span>
-                <span style={{ color: '#ff4d4f', marginLeft: '8px' }}>立省 ¥90.00/月</span>
-              </div>
-
-              <p className="landing-iso__plan-desc">支持按月订阅，随时取消</p>
-              <p className="landing-iso__plan-subdesc">适合专业团队的高密度使用</p>
-
-              <a href="/console" className="landing-iso__plan-btn landing-iso__plan-btn--solid">立即订阅</a>
-
-              <div className="landing-iso__plan-quota">
-                <IconBolt className="landing-iso__icon-sm" />
-                <span>每 4 小时 500 Prompts 配额 (5x Lite)</span>
-              </div>
-
-              <ul className="landing-iso__plan-features">
-                <li><IconCheck className="landing-iso__check-icon" /> 高质量开源模型，覆盖主流编码场景</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 稳定响应速度，持续在线可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 兼容 10+ 主流 AI 编码工具</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 模型能力持续更新，长期可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 资源包折扣取整: 8 折</li>
-              </ul>
-            </article>
-
-            <article className="landing-iso__plan-card">
-              <div className="landing-iso__plan-badge-top">超大用量 🔥</div>
-              <div className="landing-iso__plan-header">
-                <div className="landing-iso__plan-icon" style={{ background: 'linear-gradient(135deg, #ffa940 0%, #ff7a45 100%)' }}>
-                  <IconCrown className="landing-iso__icon-md" />
-                </div>
-                <h3 className="landing-iso__plan-name">旗舰版</h3>
-              </div>
-
-              <div className="landing-iso__plan-price">
-                <span className="landing-iso__plan-symbol">¥</span>
-                <span className="landing-iso__plan-amount">180</span>
-                <span className="landing-iso__plan-period">/月</span>
-                <span className="landing-iso__plan-badge">新春特惠立享5折</span>
-              </div>
-
-              <div className="landing-iso__plan-original">
-                原价: <span style={{ textDecoration: 'line-through' }}>¥360/月</span>
-                <span style={{ color: '#ff4d4f', marginLeft: '8px' }}>立省 ¥180.00/月</span>
-              </div>
-
-              <p className="landing-iso__plan-desc">支持按月订阅，随时取消</p>
-              <p className="landing-iso__plan-subdesc">适合资深开发的海量工作负载</p>
-
-              <a href="/console" className="landing-iso__plan-btn landing-iso__plan-btn--premium">立即订阅</a>
-
-              <div className="landing-iso__plan-quota">
-                <IconBolt className="landing-iso__icon-sm" />
-                <span>每 4 小时 2000 Prompts 配额 (20x Lite)</span>
-              </div>
-
-              <ul className="landing-iso__plan-features">
-                <li><IconCheck className="landing-iso__check-icon" /> 高质量开源模型，覆盖主流编码场景</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 稳定响应速度，持续在线可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 兼容 10+ 主流 AI 编码工具</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 模型能力持续更新，长期可用</li>
-                <li><IconCheck className="landing-iso__check-icon" /> 资源包折扣取整: 6 折</li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-iso__section landing-iso__closed">
-        <div className="landing-iso__container landing-iso__split">
-          <div className="landing-iso__code-window">
-            <IconLayers className="landing-iso__code-bg-icon" />
-            <div className="landing-iso__code-dots">
-              <span className="landing-iso__code-dot landing-iso__code-dot--red" />
-              <span className="landing-iso__code-dot landing-iso__code-dot--yellow" />
-              <span className="landing-iso__code-dot landing-iso__code-dot--green" />
-            </div>
-            <p className="landing-iso__code-line landing-iso__code-comment">// 闭源模型集群配置 (Closed-Source)</p>
-            <p className="landing-iso__code-line"><span className="landing-iso__code-keyword">const</span> config = {'{'}</p>
-            <p className="landing-iso__code-line">&nbsp;&nbsp;pricing: <span className="landing-iso__code-string">"PAY_AS_YOU_GO"</span>,</p>
-            <p className="landing-iso__code-line">&nbsp;&nbsp;access: <span className="landing-iso__code-string">"FULL_API_MIRROR"</span>,</p>
-            <p className="landing-iso__code-line">&nbsp;&nbsp;models: [<span className="landing-iso__code-string">"gpt-4o", "claude-3-5-sonnet"</span>],</p>
-            <p className="landing-iso__code-line">{'}'};</p>
-            <p className="landing-iso__code-line landing-iso__code-comment">// 实时推理链路监控...</p>
-            <div className="landing-iso__progress">
-              <span />
-            </div>
-          </div>
-
-          <div>
-            <span className="landing-iso__kicker">Closed Source Suite</span>
-            <h2 className="landing-iso__headline">按量计费：闭源模型的高性能镜像</h2>
-            <p className="landing-iso__body">
-              针对追求极致逻辑能力的场景，我们提供原生闭源模型的 1:1 转发服务。无需复杂配置，按 Token 实际消耗扣费，保障企业级业务的高可靠与高响应。
-            </p>
-
-            <div className="landing-iso__mini-grid">
-              <article className="landing-iso__mini-card">
-                <IconGlobe className="landing-iso__mini-icon" />
-                <h4 className="landing-iso__mini-title">全球分发</h4>
-                <p className="landing-iso__mini-text">毫秒级全球接入点</p>
-              </article>
-
-              <article className="landing-iso__mini-card">
-                <IconShield className="landing-iso__mini-icon" />
-                <h4 className="landing-iso__mini-title">精准计费</h4>
-                <p className="landing-iso__mini-text">1:1 Token 对账单</p>
-              </article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="套餐详情" className="landing-iso__section landing-iso__opensource">
-        <div className="landing-iso__container">
-          <h2 className="landing-iso__section-title">Code Plan 开源核心</h2>
-          <p className="landing-iso__section-subtitle landing-iso__section-subtitle--light">
-            打磨高并发、低延迟、可循环刷新的开源模型方案，覆盖从原型到生产的开发周期。
-          </p>
-
-          <div className="landing-iso__tri-grid">
-            <article className="landing-iso__dark-card">
-              <IconRefresh className="landing-iso__dark-icon" />
-              <h3 className="landing-iso__dark-title">开源模型特供</h3>
-              <p className="landing-iso__dark-copy">
-                深度整合 Llama 3、DeepSeek-V3 等顶级开源模型。Code Plan 支持高并发调用与 4 小时循环额度重置。
-              </p>
-            </article>
-
-            <article className="landing-iso__dark-card">
-              <IconCode className="landing-iso__dark-icon" />
-              <h3 className="landing-iso__dark-title">4h 循环魔法</h3>
-              <p className="landing-iso__dark-copy">
-                不再为月度总额度发愁。系统每 4 小时准时刷新配额，让开发灵感随刷新频率持续在线。
-              </p>
-            </article>
-
-            <article className="landing-iso__dark-card">
-              <IconGauge className="landing-iso__dark-icon" />
-              <h3 className="landing-iso__dark-title">极低延迟</h3>
-              <p className="landing-iso__dark-copy">
-                基于分布式集群架构，请求直接路由至最近的高性能 GPU 节点，提供近乎实时的首字输出体验。
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <footer className="landing-iso__footer" id="API文档">
+      {/* Footer */}
+      <footer className="landing-iso__footer" id="docs">
         <div className="landing-iso__container">
           <div className="landing-iso__footer-main">
             <a href="#" className="landing-iso__brand">
-              <span className="landing-iso__brand-badge">W</span>
-              <span>frog-api</span>
+              <span className="landing-iso__brand-badge" style={{ transform: 'scale(0.8)' }}>F</span>
+              <span>Frog API</span>
             </a>
 
             <div className="landing-iso__footer-links">
-              <a href="#">Twitter</a>
-              <a href="#">GitHub</a>
-              <a href="#">Discord</a>
-              <a href="#">Privacy</a>
+              <a href="#">文档中心</a>
+              <a href="#">计费说明</a>
+              <a href="#">服务条款 (SLA)</a>
+              <a href="#">隐私政策</a>
             </div>
 
-            <div className="landing-iso__footer-status">CONNECTED TO GLOBAL CLUSTER: V2.5.1-STABLE</div>
+            <div className="landing-iso__footer-status">API CLUSTER: STABLE RUNNING</div>
           </div>
 
-          <div className="landing-iso__copyright">© 2024 frog-api • Empowering Future AI Development</div>
+          <div className="landing-iso__copyright">© 2026 Frog API Network. All rights reserved.</div>
         </div>
       </footer>
     </div>
