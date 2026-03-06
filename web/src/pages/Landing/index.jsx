@@ -8,6 +8,8 @@ const MODELS = [
   { name: 'gpt-5.3-codex', color: '#f5b041' },
 ];
 
+const BRAND_ICON_URL = 'https://tncache1-f1.v3mh.com/image/2026/03/01/34da420726354d2ee43328b73faa130b.jpg';
+
 const CLOSED_SOURCE_FEATURES = [
   'OpenAI 协议 1:1 兼容接入',
   '按量计费，无隐形及阶梯消费',
@@ -307,10 +309,16 @@ const Landing = () => {
           width: 28px;
           height: 28px;
           border-radius: 8px;
-          background: linear-gradient(135deg, var(--accent), var(--accent-purple));
-          color: white;
-          font-weight: 900;
-          font-size: 14px;
+          overflow: hidden;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .landing-iso__brand-logo {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
         }
 
         .landing-iso__menu {
@@ -1130,7 +1138,9 @@ const Landing = () => {
       <div className="landing-iso__nav-wrap">
         <nav className={`landing-iso__nav ${scrolled ? 'is-scrolled' : ''}`}>
           <a href="/index" className="landing-iso__brand">
-            <span className="landing-iso__brand-badge">F</span>
+            <span className="landing-iso__brand-badge">
+              <img src={BRAND_ICON_URL} alt="Frog API" className="landing-iso__brand-logo" />
+            </span>
             <span>Frog API</span>
           </a>
 
@@ -1394,7 +1404,9 @@ const Landing = () => {
         <div className="landing-iso__container">
           <div className="landing-iso__footer-main">
             <a href="#" className="landing-iso__brand">
-              <span className="landing-iso__brand-badge" style={{ transform: 'scale(0.8)' }}>F</span>
+              <span className="landing-iso__brand-badge" style={{ transform: 'scale(0.8)' }}>
+                <img src={BRAND_ICON_URL} alt="Frog API" className="landing-iso__brand-logo" />
+              </span>
               <span>Frog API</span>
             </a>
 
