@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 
 const MODELS = [
   { name: 'gpt-5.1', color: '#10a37f' },
@@ -144,6 +144,14 @@ const Orbit = () => (
 
 const Landing = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(null);
+
+  const handleCopyUrl = useCallback((url) => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    });
+  }, []);
 
   // 滚动渐显 Hook
   useEffect(() => {
@@ -1053,6 +1061,194 @@ const Landing = () => {
           margin: 0;
         }
 
+        /* --- API 站点入口卡片 --- */
+        .landing-iso__endpoints {
+          text-align: center;
+        }
+
+        .landing-iso__endpoints-subtitle {
+          font-size: 0.95rem;
+          color: var(--ink-soft);
+          margin: 0 auto 32px;
+        }
+
+        .landing-iso__endpoints-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 28px;
+          max-width: 960px;
+          margin: 0 auto;
+        }
+
+        @media (max-width: 600px) {
+          .landing-iso__endpoints-grid { grid-template-columns: 1fr; }
+        }
+
+        .landing-iso__endpoint-card {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 32px 36px;
+          border-radius: 20px;
+          cursor: pointer;
+          user-select: none;
+          text-decoration: none;
+          color: var(--ink-main);
+          transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+        }
+
+        /* Animated gradient border via pseudo */
+        .landing-iso__endpoint-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 20px;
+          padding: 1.5px;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.5), rgba(139, 92, 246, 0.5), rgba(244, 63, 94, 0.3));
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          opacity: 0.5;
+          transition: opacity 0.3s;
+        }
+
+        .landing-iso__endpoint-card::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 20px;
+          pointer-events: none;
+          transition: opacity 0.3s;
+          opacity: 0;
+        }
+
+        .landing-iso__endpoint-card--cn {
+          background: linear-gradient(145deg, rgba(244, 63, 94, 0.08), rgba(251, 146, 60, 0.06));
+        }
+        .landing-iso__endpoint-card--cn::after {
+          background: radial-gradient(ellipse at 30% 50%, rgba(244, 63, 94, 0.15), transparent 70%);
+        }
+
+        .landing-iso__endpoint-card--global {
+          background: linear-gradient(145deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.06));
+        }
+        .landing-iso__endpoint-card--global::after {
+          background: radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.15), transparent 70%);
+        }
+
+        .landing-iso__endpoint-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
+        }
+        .landing-iso__endpoint-card:hover::before { opacity: 1; }
+        .landing-iso__endpoint-card:hover::after { opacity: 1; }
+
+        .landing-iso__endpoint-card:active {
+          transform: translateY(-1px) scale(0.99);
+        }
+
+        .landing-iso__endpoint-flag {
+          width: 64px; height: 64px;
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.7rem;
+          line-height: 1;
+          flex-shrink: 0;
+          position: relative;
+          z-index: 2;
+        }
+        .landing-iso__endpoint-card--cn .landing-iso__endpoint-flag {
+          background: rgba(244, 63, 94, 0.12);
+          box-shadow: 0 0 20px rgba(244, 63, 94, 0.15);
+        }
+        .landing-iso__endpoint-card--global .landing-iso__endpoint-flag {
+          background: rgba(59, 130, 246, 0.12);
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .landing-iso__endpoint-info {
+          text-align: left;
+          flex: 1;
+          min-width: 0;
+          position: relative;
+          z-index: 2;
+        }
+
+        .landing-iso__endpoint-label {
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-bottom: 4px;
+        }
+        .landing-iso__endpoint-card--cn .landing-iso__endpoint-label { color: #fb7185; }
+        .landing-iso__endpoint-card--global .landing-iso__endpoint-label { color: #60a5fa; }
+
+        .landing-iso__endpoint-url {
+          font-size: 1.4rem;
+          font-weight: 700;
+          font-family: "Fira Code", "JetBrains Mono", ui-monospace, monospace;
+          color: #fff;
+          line-height: 1.3;
+        }
+
+        .landing-iso__endpoint-url-proto {
+          color: var(--ink-soft);
+          font-weight: 500;
+          font-size: 0.9em;
+        }
+
+        .landing-iso__endpoint-desc {
+          font-size: 0.85rem;
+          color: var(--ink-soft);
+          margin-top: 3px;
+        }
+
+        .landing-iso__endpoint-copy {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.88rem;
+          font-weight: 600;
+          padding: 10px 20px;
+          border-radius: 12px;
+          color: var(--ink-soft);
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          transition: all 0.25s;
+          white-space: nowrap;
+          flex-shrink: 0;
+          position: relative;
+          z-index: 2;
+        }
+
+        .landing-iso__endpoint-copy svg {
+          width: 14px; height: 14px;
+        }
+
+        .landing-iso__endpoint-card:hover .landing-iso__endpoint-copy {
+          color: #fff;
+          border-color: transparent;
+        }
+        .landing-iso__endpoint-card--cn:hover .landing-iso__endpoint-copy {
+          background: rgba(244, 63, 94, 0.3);
+        }
+        .landing-iso__endpoint-card--global:hover .landing-iso__endpoint-copy {
+          background: rgba(59, 130, 246, 0.3);
+        }
+
+        .landing-iso__endpoint-copy--copied {
+          color: #fff !important;
+          background: rgba(16, 185, 129, 0.4) !important;
+          border-color: rgba(16, 185, 129, 0.6) !important;
+        }
+
         /* --- 页脚 --- */
         .landing-iso__footer {
           border-top: 1px solid rgba(255, 255, 255, 0.05);
@@ -1185,6 +1381,52 @@ const Landing = () => {
       {/* 统计数据 */}
       <section className="landing-iso__section landing-iso__stats-section reveal">
         <div className="landing-iso__container">
+          {/* API 站点入口 */}
+          <div className="landing-iso__endpoints reveal" style={{ marginBottom: 60 }}>
+            <h2 className="landing-iso__section-title" style={{ fontSize: '1.8rem', marginBottom: 8 }}>
+              接入地址
+            </h2>
+            <p className="landing-iso__endpoints-subtitle">点击卡片一键复制 Base URL</p>
+            <div className="landing-iso__endpoints-grid">
+              {/* 国内站点 */}
+              <div
+                className="landing-iso__endpoint-card landing-iso__endpoint-card--cn"
+                onClick={() => handleCopyUrl('https://frogapi.cn')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleCopyUrl('https://frogapi.cn')}
+              >
+                <div className="landing-iso__endpoint-flag">🇨🇳</div>
+                <div className="landing-iso__endpoint-info">
+                  <div className="landing-iso__endpoint-label">国内站点</div>
+                  <div className="landing-iso__endpoint-url"><span className="landing-iso__endpoint-url-proto">https://</span>frogapi.cn</div>
+                  <div className="landing-iso__endpoint-desc">国内加速 · 低延迟</div>
+                </div>
+                <div className={`landing-iso__endpoint-copy ${copiedUrl === 'https://frogapi.cn' ? 'landing-iso__endpoint-copy--copied' : ''}`}>
+                  {copiedUrl === 'https://frogapi.cn' ? '✓ 已复制' : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</>}
+                </div>
+              </div>
+              {/* 国外站点 */}
+              <div
+                className="landing-iso__endpoint-card landing-iso__endpoint-card--global"
+                onClick={() => handleCopyUrl('https://api.frog.cn')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && handleCopyUrl('https://api.frog.cn')}
+              >
+                <div className="landing-iso__endpoint-flag">🌍</div>
+                <div className="landing-iso__endpoint-info">
+                  <div className="landing-iso__endpoint-label">国外站点</div>
+                  <div className="landing-iso__endpoint-url"><span className="landing-iso__endpoint-url-proto">https://</span>api.frog.cn</div>
+                  <div className="landing-iso__endpoint-desc">全球节点 · 高可用</div>
+                </div>
+                <div className={`landing-iso__endpoint-copy ${copiedUrl === 'https://api.frog.cn' ? 'landing-iso__endpoint-copy--copied' : ''}`}>
+                  {copiedUrl === 'https://api.frog.cn' ? '✓ 已复制' : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</>}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="landing-iso__stats-grid">
             <div className="landing-iso__stat-card">
               <div className="landing-iso__stat-value">99.99<span>%</span></div>
