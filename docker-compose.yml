@@ -16,7 +16,7 @@ version: '3.4' # For compatibility with older Docker versions
 
 services:
   new-api:
-    image: crpi-wtxcelbenj5cpiu1.cn-shenzhen.personal.cr.aliyuncs.com/mongo-coding/mongo-api:260207
+    image: crpi-wtxcelbenj5cpiu1.cn-shenzhen.personal.cr.aliyuncs.com/mongo-coding/mongo-api:260306
     container_name: new-api
     restart: always
     command: --log-dir /app/logs
