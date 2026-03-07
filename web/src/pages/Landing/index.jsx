@@ -1391,19 +1391,19 @@ const Landing = () => {
               {/* 国内站点 */}
               <div
                 className="landing-iso__endpoint-card landing-iso__endpoint-card--cn"
-                onClick={() => handleCopyUrl('https://frogapi.cn')}
+                onClick={() => handleCopyUrl('https://frog-api.cn')}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && handleCopyUrl('https://frogapi.cn')}
+                onKeyDown={(e) => e.key === 'Enter' && handleCopyUrl('https://frog-api.cn')}
               >
                 <div className="landing-iso__endpoint-flag">🇨🇳</div>
                 <div className="landing-iso__endpoint-info">
                   <div className="landing-iso__endpoint-label">国内站点</div>
-                  <div className="landing-iso__endpoint-url"><span className="landing-iso__endpoint-url-proto">https://</span>frogapi.cn</div>
+                  <div className="landing-iso__endpoint-url"><span className="landing-iso__endpoint-url-proto">https://</span>frog-api.cn</div>
                   <div className="landing-iso__endpoint-desc">国内加速 · 低延迟</div>
                 </div>
-                <div className={`landing-iso__endpoint-copy ${copiedUrl === 'https://frogapi.cn' ? 'landing-iso__endpoint-copy--copied' : ''}`}>
-                  {copiedUrl === 'https://frogapi.cn' ? '✓ 已复制' : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</>}
+                <div className={`landing-iso__endpoint-copy ${copiedUrl === 'https://frog-api.cn' ? 'landing-iso__endpoint-copy--copied' : ''}`}>
+                  {copiedUrl === 'https://frog-api.cn' ? '✓ 已复制' : <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制</>}
                 </div>
               </div>
               {/* 国外站点 */}

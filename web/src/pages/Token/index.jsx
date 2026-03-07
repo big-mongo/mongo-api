@@ -25,7 +25,7 @@ import TokensTable from '../../components/table/tokens';
 const BaseUrlBanner = () => {
   const [copiedIdx, setCopiedIdx] = useState(null);
   const sites = [
-    { flag: '🇨🇳', label: '国内站点', url: 'https://frogapi.cn', desc: '国内加速 · 低延迟', color: '#f43f5e', gradient: 'linear-gradient(135deg, #f43f5e22, #fb923c18)' },
+    { flag: '🇨🇳', label: '国内站点', url: 'https://frog-api.cn', desc: '国内加速 · 低延迟', color: '#f43f5e', gradient: 'linear-gradient(135deg, #f43f5e22, #fb923c18)' },
     { flag: '🌍', label: '国外站点', url: 'https://api.frog.cn', desc: '全球节点 · 高可用', color: '#3b82f6', gradient: 'linear-gradient(135deg, #3b82f622, #8b5cf618)' },
   ];
 
