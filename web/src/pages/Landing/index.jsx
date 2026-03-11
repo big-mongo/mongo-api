@@ -24,6 +24,61 @@ const ENTERPRISE_FEATURES = [
   'IP 白名单 + 密钥按期轮换安全策略',
 ];
 
+// --- 新增: Codex 订阅套餐数据 ---
+const CODEX_PLANS = [
+  {
+    id: 'flagship',
+    name: 'Codex-旗舰版',
+    subtitle: '有效期一个月,每日自动刷新',
+    price: '85.90',
+    period: '1 个月',
+    reset: '每天',
+    totalQuota: '¥90.00',
+    group: 'OpenAI Codex 订阅组',
+    recommended: true
+  },
+  {
+    id: 'monthly-large',
+    name: 'Codex月包-大容量',
+    subtitle: '有效期一个月,每日自动刷新',
+    price: '69.90',
+    period: '1 个月',
+    reset: '每天',
+    totalQuota: '¥60.00',
+    group: 'OpenAI Codex 订阅组'
+  },
+  {
+    id: 'monthly-starter',
+    name: 'Codex月包-入门',
+    subtitle: '有效期一个月,每日自动刷新',
+    price: '49.90',
+    period: '1 个月',
+    reset: '每天',
+    totalQuota: '¥30.00',
+    group: 'OpenAI Codex 订阅组'
+  },
+  {
+    id: 'weekly',
+    name: 'Codex周包',
+    subtitle: '有效期一周,每日自动刷新',
+    price: '19.90',
+    period: '7 天',
+    reset: '每天',
+    totalQuota: '¥30.00',
+    group: 'OpenAI Codex 订阅组'
+  },
+  {
+    id: 'daily',
+    name: 'Codex日包(尝鲜)',
+    subtitle: '24小时生效',
+    price: '2.90',
+    period: '1 天',
+    reset: '每天',
+    totalQuota: '¥30.00',
+    group: 'OpenAI Codex 订阅组'
+  }
+];
+
 // --- Icons ---
 const IconBase = ({ children, className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -118,7 +173,6 @@ const Orbit = () => (
     <div className="landing-iso__orbit-ring landing-iso__orbit-ring--inner" />
     <div className="landing-iso__orbit-ring landing-iso__orbit-ring--outer" />
     
-    {/* 卫星容器，用于计算旋转 */}
     {MODELS.map((model, index) => {
       const angle = (360 / MODELS.length) * index;
       return (
@@ -153,19 +207,15 @@ const Landing = () => {
     });
   }, []);
 
-  // 滚动渐显 Hook
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    // 交叉观察器：实现元素滚动到可视区域时添加 .active 类
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add('reveal-active');
-            // 可选：如果不希望重复触发，可以在这里 unobserve
-            // observer.unobserve(entry.target);
           }
         });
       },
@@ -174,9 +224,8 @@ const Landing = () => {
 
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
 
-    // 隔离外部全局样式干扰
     const originalBodyBg = document.body.style.backgroundColor;
-    document.body.style.backgroundColor = '#030712'; // 深邃星空黑
+    document.body.style.backgroundColor = '#030712';
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -278,7 +327,6 @@ const Landing = () => {
         }
 
         .landing-iso__nav {
-          /* 常驻毛玻璃效果 */
           background: rgba(15, 23, 42, 0.4);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
@@ -403,7 +451,6 @@ const Landing = () => {
           overflow: hidden;
         }
 
-        /* 顶部模糊光晕 */
         .landing-iso__hero::before {
           content: '';
           position: absolute;
@@ -532,7 +579,6 @@ const Landing = () => {
           left: 50%;
           width: 0;
           height: 0;
-          /* 外层容器旋转 */
           animation: orbit-spin 30s linear infinite;
         }
 
@@ -540,15 +586,12 @@ const Landing = () => {
           position: absolute;
           top: 0;
           left: 0;
-          /* 将元素推向轨道边缘并应用初始角度 */
           transform: rotate(var(--start-angle)) translateX(var(--orbit-radius));
         }
 
         .landing-iso__satellite-pill {
-          /* 内层反向旋转，抵消外层旋转，使文字始终保持水平 */
           animation: orbit-spin-reverse 30s linear infinite;
           transform-origin: center;
-          
           display: flex;
           align-items: center;
           gap: 8px;
@@ -561,7 +604,6 @@ const Landing = () => {
           font-size: 0.8rem;
           font-weight: 600;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-          /* 居中对齐处理 */
           margin-top: -16px;
           margin-left: -50%;
           white-space: nowrap;
@@ -796,6 +838,188 @@ const Landing = () => {
         .landing-iso__card-cta--dark:hover {
           box-shadow: 0 8px 25px -5px rgba(139, 92, 246, 0.5);
           transform: translateY(-2px);
+        }
+
+        /* --- 新增: Codex 订阅套餐样式 --- */
+        .landing-iso__codex-rule {
+          background: rgba(139, 92, 246, 0.08);
+          border: 1px dashed rgba(139, 92, 246, 0.3);
+          border-radius: 12px;
+          padding: 14px 20px;
+          margin: 0 auto 32px;
+          max-width: 800px;
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          color: #c4b5fd;
+          font-size: 0.9rem;
+          line-height: 1.5;
+        }
+
+        .landing-iso__codex-rule-icon {
+          width: 20px;
+          height: 20px;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .landing-iso__codex-rule-text {
+          flex: 1;
+        }
+
+        .landing-iso__codex-rule-text strong {
+          color: #fff;
+          font-weight: 600;
+        }
+
+        .landing-iso__codex-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+          gap: 20px;
+        }
+
+        .landing-iso__codex-card {
+          background: var(--bg-panel);
+          border: 1px solid var(--line-soft);
+          border-radius: var(--radius-lg);
+          padding: 32px 24px 24px;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          transition: all 0.3s ease;
+        }
+
+        .landing-iso__codex-card:hover {
+          transform: translateY(-5px);
+          border-color: rgba(139, 92, 246, 0.4);
+          box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.15);
+        }
+
+        .landing-iso__codex-card--recommended {
+          border-color: var(--accent-purple);
+          background: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, var(--bg-panel) 100%);
+        }
+
+        .landing-iso__codex-card--recommended:hover {
+           border-color: #a78bfa;
+           box-shadow: 0 10px 30px -10px rgba(139, 92, 246, 0.3);
+        }
+
+        .landing-iso__codex-badge {
+          position: absolute;
+          top: -12px;
+          left: 24px;
+          background: linear-gradient(135deg, #a78bfa, var(--accent-purple));
+          color: white;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: 999px;
+          box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);
+          z-index: 2;
+        }
+
+        .landing-iso__codex-highlight {
+          position: absolute;
+          top: -1px; left: -1px; right: -1px;
+          background: rgba(255, 255, 255, 0.06);
+          border-bottom: 1px solid var(--line-soft);
+          padding: 8px 12px;
+          font-size: 0.75rem;
+          color: var(--ink-main);
+          border-top-left-radius: var(--radius-lg);
+          border-top-right-radius: var(--radius-lg);
+          text-align: center;
+          white-space: pre-wrap;
+          line-height: 1.4;
+        }
+
+        .landing-iso__codex-card.has-highlight {
+          padding-top: 68px;
+        }
+
+        .landing-iso__codex-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          margin: 0 0 6px;
+          color: var(--ink-main);
+        }
+
+        .landing-iso__codex-subtitle {
+          font-size: 0.8rem;
+          color: var(--ink-soft);
+          margin: 0 0 20px;
+          line-height: 1.4;
+        }
+
+        .landing-iso__codex-price {
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: white;
+          margin: 0 0 24px;
+          display: flex;
+          align-items: baseline;
+        }
+        .landing-iso__codex-price span {
+          font-size: 1.2rem;
+          margin-right: 4px;
+          color: var(--ink-soft);
+        }
+
+        .landing-iso__codex-features {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 28px 0;
+          flex: 1;
+        }
+
+        .landing-iso__codex-features li {
+          font-size: 0.85rem;
+          color: var(--ink-soft);
+          margin-bottom: 12px;
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+        }
+
+        .landing-iso__codex-features li::before {
+          content: '•';
+          color: var(--ink-soft);
+          font-weight: bold;
+        }
+        
+        .landing-iso__codex-features li strong {
+          color: var(--ink-main);
+          font-weight: 500;
+        }
+
+        .landing-iso__codex-btn {
+          width: 100%;
+          padding: 10px;
+          text-align: center;
+          border-radius: 8px;
+          border: 1px solid var(--accent);
+          color: var(--accent);
+          font-weight: 600;
+          transition: all 0.2s;
+          background: transparent;
+          cursor: pointer;
+        }
+
+        .landing-iso__codex-btn:hover {
+          background: var(--accent);
+          color: white;
+        }
+        
+        .landing-iso__codex-btn--recommended {
+          background: var(--accent-purple);
+          border-color: var(--accent-purple);
+          color: white;
+        }
+        
+        .landing-iso__codex-btn--recommended:hover {
+          background: #7c3aed;
+          border-color: #7c3aed;
         }
 
         /* --- 统计数据 --- */
@@ -1099,7 +1323,6 @@ const Landing = () => {
           overflow: hidden;
         }
 
-        /* Animated gradient border via pseudo */
         .landing-iso__endpoint-card::before {
           content: '';
           position: absolute;
@@ -1327,6 +1550,7 @@ const Landing = () => {
           .landing-iso__stats-grid { grid-template-columns: 1fr; }
           .landing-iso__mini-grid { grid-template-columns: 1fr; }
           .landing-iso__orbit { transform: scale(0.7); height: 320px; }
+          .landing-iso__codex-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -1561,6 +1785,56 @@ const Landing = () => {
                 自研 Rust 网关核心，支持连接池复用与流式传输 (Stream) 优化，首字响应时间 (TTFT) 降低 30%。
               </p>
             </article>
+          </div>
+        </div>
+      </section>
+
+      {/* --- 新增: Codex 专属订阅套餐 --- */}
+      <section id="codex-plans" className="landing-iso__section reveal" style={{ paddingTop: 40 }}>
+        <div className="landing-iso__container">
+          <h2 className="landing-iso__section-title">Codex 专属订阅套餐</h2>
+          <p className="landing-iso__section-subtitle" style={{ marginBottom: 24 }}>
+            专为高频代码生成、IDE 智能补全场景打造。每日自动刷新调用额度，提供更极致的性价比体验。
+          </p>
+
+          <div className="landing-iso__codex-rule">
+            <svg className="landing-iso__codex-rule-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            <div className="landing-iso__codex-rule-text">
+              <strong>额度发放规则：</strong>以月包为例，有效期一个月，每日自动刷新额度。总额度计算方式为：每日额度 × 天数（例如：30*60=1800）。
+            </div>
+          </div>
+
+          <div className="landing-iso__codex-grid">
+            {CODEX_PLANS.map((plan) => (
+              <div 
+                key={plan.id} 
+                className={`landing-iso__codex-card ${plan.recommended ? 'landing-iso__codex-card--recommended' : ''} ${plan.highlight ? 'has-highlight' : ''}`}
+              >
+                {plan.recommended && <div className="landing-iso__codex-badge">✨ 推荐</div>}
+                {plan.highlight && <div className="landing-iso__codex-highlight">{plan.highlight}</div>}
+                
+                <h3 className="landing-iso__codex-title">{plan.name}</h3>
+                <p className="landing-iso__codex-subtitle">{plan.subtitle}</p>
+
+                <div className="landing-iso__codex-price">
+                  <span>¥</span>{plan.price}
+                </div>
+                
+                <ul className="landing-iso__codex-features">
+                  <li>有效期: <strong>{plan.period}</strong></li>
+                  <li>额度重置: <strong>{plan.reset}</strong></li>
+                  <li>总额度: <strong>{plan.totalQuota}</strong></li>
+                  <li>升级分组: {plan.group}</li>
+                </ul>
+                
+                <button className={`landing-iso__codex-btn ${plan.recommended ? 'landing-iso__codex-btn--recommended' : ''}`}>
+                  立即订阅
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       </section>
