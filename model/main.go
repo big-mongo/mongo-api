@@ -24,6 +24,7 @@ var commonFalseVal string
 
 var logKeyCol string
 var logGroupCol string
+var LogGroupCol string
 
 func initCol() {
 	// init common column names
@@ -57,8 +58,7 @@ func initCol() {
 			logKeyCol = commonKeyCol
 		}
 	}
-	// log sql type and database type
-	//common.SysLog("Using Log SQL Type: " + common.LogSqlType)
+	LogGroupCol = logGroupCol
 }
 
 var DB *gorm.DB
