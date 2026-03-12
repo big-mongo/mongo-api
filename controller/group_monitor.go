@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
@@ -30,6 +31,47 @@ type GroupMonitorData struct {
 	SuccessRate  float64                `json:"success_rate"`
 	FirstLatency int                    `json:"first_latency"`
 	TimeSlots    []GroupMonitorTimeSlot `json:"time_slots"`
+}
+
+type sidebarModulesSectionConfig map[string]bool
+
+type sidebarModulesAdminConfig map[string]sidebarModulesSectionConfig
+
+func isSidebarModuleVisibleForRole(sectionKey string, moduleKey string, role int) bool {
+	common.OptionMapRWMutex.RLock()
+	rawConfig := strings.TrimSpace(common.OptionMap["SidebarModulesAdmin"])
+	common.OptionMapRWMutex.RUnlock()
+
+	if rawConfig == "" {
+		return true
+	}
+
+	var config sidebarModulesAdminConfig
+	if err := common.UnmarshalJsonStr(rawConfig, &config); err != nil {
+		common.SysLog("failed to parse SidebarModulesAdmin: " + err.Error())
+		return true
+	}
+
+	sectionConfig, ok := config[sectionKey]
+	if !ok {
+		return true
+	}
+	if enabled, ok := sectionConfig["enabled"]; ok && !enabled {
+		return false
+	}
+
+	if role >= common.RoleAdminUser {
+		adminScopedKey := moduleKey + "-admin"
+		if adminVisible, ok := sectionConfig[adminScopedKey]; ok {
+			return adminVisible
+		}
+	}
+
+	if visible, ok := sectionConfig[moduleKey]; ok {
+		return visible
+	}
+
+	return true
 }
 
 func getGroupMonitorCacheKey(hours int) string {
@@ -197,6 +239,14 @@ func computeGroupMonitorData(hours int) ([]GroupMonitorData, error) {
 }
 
 func GetGroupMonitor(c *gin.Context) {
+	if !isSidebarModuleVisibleForRole("console", "group-monitor", c.GetInt("role")) {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "当前用户无权访问分组监控",
+		})
+		return
+	}
+
 	hours := common.String2Int(c.Query("hours"))
 	if hours != 1 && hours != 2 && hours != 3 {
 		hours = 1

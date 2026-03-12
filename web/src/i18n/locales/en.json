@@ -418,6 +418,8 @@
     "使用ID排序": "Sort by ID",
     "使用日志": "Usage Logs",
     "分组监控": "Group Monitor",
+    "分组监控（管理员）": "Group Monitor (Admin)",
+    "控制管理员是否显示和访问分组监控": "Control whether admins can see and access Group Monitor",
     "首字": "First Token",
     "分组可用率和首字响应时间监控": "Group Availability and First Token Latency Monitor",
     "使用模式": "Usage mode",

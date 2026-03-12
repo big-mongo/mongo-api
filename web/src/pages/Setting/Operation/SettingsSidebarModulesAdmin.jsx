@@ -30,8 +30,13 @@ import {
 } from '@douyinfe/semi-ui';
 import { API, showSuccess, showError } from '../../../helpers';
 import { StatusContext } from '../../../context/Status';
+import {
+  DEFAULT_ADMIN_CONFIG,
+  mergeAdminConfig,
+} from '../../../hooks/common/useSidebar';
 
 const { Text } = Typography;
+const cloneDefaultModules = () => JSON.parse(JSON.stringify(DEFAULT_ADMIN_CONFIG));
 
 export default function SettingsSidebarModulesAdmin(props) {
   const { t } = useTranslation();
@@ -39,36 +44,8 @@ export default function SettingsSidebarModulesAdmin(props) {
   const [statusState, statusDispatch] = useContext(StatusContext);
 
   // 左侧边栏模块管理状态（管理员全局控制）
-  const [sidebarModulesAdmin, setSidebarModulesAdmin] = useState({
-    chat: {
-      enabled: true,
-      playground: true,
-      chat: true,
-    },
-    console: {
-      enabled: true,
-      detail: true,
-      token: true,
-      log: true,
-      midjourney: true,
-      task: true,
-    },
-    personal: {
-      enabled: true,
-      topup: true,
-      personal: true,
-    },
-    admin: {
-      enabled: true,
-      channel: true,
-      models: true,
-      deployment: true,
-      redemption: true,
-      user: true,
-      subscription: true,
-      setting: true,
-    },
-  });
+  const [sidebarModulesAdmin, setSidebarModulesAdmin] =
+    useState(cloneDefaultModules);
 
   // 处理区域级别开关变更
   function handleSectionChange(sectionKey) {
@@ -100,47 +77,7 @@ export default function SettingsSidebarModulesAdmin(props) {
 
   // 重置为默认配置
   function resetSidebarModules() {
-    const defaultModules = {
-      chat: {
-        enabled: true,
-        playground: true,
-        chat: true,
-      },
-      console: {
-        enabled: true,
-        detail: true,
-        token: true,
-        log: true,
-        'group-monitor': true,
-        midjourney: true,
-        task: true,
-      },
-      console: {
-        enabled: true,
-        detail: true,
-        token: true,
-        log: true,
-        'group-monitor': true,
-        midjourney: true,
-        task: true,
-      },
-      personal: {
-        enabled: true,
-        topup: true,
-        personal: true,
-      },
-      admin: {
-        enabled: true,
-        channel: true,
-        models: true,
-        deployment: true,
-        redemption: true,
-        user: true,
-        subscription: true,
-        setting: true,
-      },
-    };
-    setSidebarModulesAdmin(defaultModules);
+    setSidebarModulesAdmin(cloneDefaultModules());
     showSuccess(t('已重置为默认配置'));
   }
 
@@ -179,53 +116,19 @@ export default function SettingsSidebarModulesAdmin(props) {
     }
   }
 
-  const mergeWithDefault = (savedConfig) => {
-    const defaultModules = {
-      chat: { enabled: true, playground: true, chat: true },
-      console: {
-        enabled: true,
-        detail: true,
-        token: true,
-        log: true,
-        'group-monitor': true,
-        midjourney: true,
-        task: true,
-      },
-      personal: { enabled: true, topup: true, personal: true },
-      admin: {
-        enabled: true,
-        channel: true,
-        models: true,
-        deployment: true,
-        redemption: true,
-        user: true,
-        subscription: true,
-        setting: true,
-      },
-    };
-
-    if (!savedConfig || typeof savedConfig !== 'object') return defaultModules;
-
-    const merged = JSON.parse(JSON.stringify(defaultModules));
-    for (const [sectionKey, sectionConfig] of Object.entries(savedConfig)) {
-      if (!sectionConfig || typeof sectionConfig !== 'object') continue;
-      if (merged[sectionKey]) {
-        merged[sectionKey] = { ...merged[sectionKey], ...sectionConfig };
-      }
-    }
-    return merged;
-  };
-
   useEffect(() => {
     if (props.options && props.options.SidebarModulesAdmin) {
       try {
         const modules = JSON.parse(props.options.SidebarModulesAdmin);
-        setSidebarModulesAdmin(mergeWithDefault(modules));
+        setSidebarModulesAdmin(mergeAdminConfig(modules));
       } catch (error) {
-        setSidebarModulesAdmin(mergeWithDefault(null));
+        setSidebarModulesAdmin(cloneDefaultModules());
       }
+    } else {
+      setSidebarModulesAdmin(cloneDefaultModules());
     }
   }, [props.options]);
+
 
   // 区域配置数据
   const sectionConfigs = [
@@ -254,6 +157,11 @@ export default function SettingsSidebarModulesAdmin(props) {
           key: 'group-monitor',
           title: t('分组监控'),
           description: t('分组可用率和首字响应时间监控'),
+        },
+        {
+          key: 'group-monitor-admin',
+          title: t('分组监控（管理员）'),
+          description: t('控制管理员是否显示和访问分组监控'),
         },
         {
           key: 'midjourney',

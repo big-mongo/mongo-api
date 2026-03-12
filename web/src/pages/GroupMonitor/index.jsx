@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React, { useContext, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import {
   Card,
   Typography,
@@ -26,13 +26,26 @@ import {
   Button,
   Spin,
   Tooltip,
-  Tag,
 } from '@douyinfe/semi-ui';
 import { IconRefresh } from '@douyinfe/semi-icons';
 import { CheckCircle } from 'lucide-react';
+import { StatusContext } from '../../context/Status';
 import { useGroupMonitorData } from '../../hooks/group-monitor/useGroupMonitorData';
-import { timestamp2string } from '../../helpers';
+import {
+  isRoleAwareModuleVisible,
+  mergeAdminConfig,
+} from '../../hooks/common/useSidebar';
+import { isAdmin, timestamp2string } from '../../helpers';
 import './index.css';
+
+const getCachedStatus = () => {
+  try {
+    const rawStatus = localStorage.getItem('status');
+    return rawStatus ? JSON.parse(rawStatus) : null;
+  } catch (error) {
+    return null;
+  }
+};
 
 const { Title, Text } = Typography;
 
@@ -47,13 +60,6 @@ const getStatusColor = (successRate) => {
   if (successRate >= 90) return 'var(--semi-color-success)';
   if (successRate >= 50) return 'var(--semi-color-warning)';
   return 'var(--semi-color-danger)';
-};
-
-const getStatusText = (successRate) => {
-  if (successRate < 0) return '无数据';
-  if (successRate >= 90) return '正常';
-  if (successRate >= 50) return '警告';
-  return '异常';
 };
 
 const TimeSlotBar = ({ slots }) => {
@@ -85,9 +91,7 @@ const TimeSlotBar = ({ slots }) => {
 };
 
 const GroupCard = ({ group }) => {
-  const { t } = useTranslation();
   const statusColor = getStatusColor(group.success_rate);
-  const statusText = getStatusText(group.success_rate);
 
   return (
     <Card className="group-monitor-card" bodyStyle={{ padding: '20px' }}>
@@ -174,8 +178,41 @@ const GroupCard = ({ group }) => {
 };
 
 const GroupMonitor = () => {
-  const { t } = useTranslation();
-  const { data, loading, hours, setHours, lastUpdate, refresh } = useGroupMonitorData();
+  const [statusState] = useContext(StatusContext);
+  const resolvedStatus = useMemo(
+    () => statusState?.status ?? getCachedStatus(),
+    [statusState?.status],
+  );
+  const statusReady = resolvedStatus !== null;
+  const adminConfig = useMemo(() => {
+    if (!statusReady) return null;
+
+    if (resolvedStatus?.SidebarModulesAdmin) {
+      try {
+        return mergeAdminConfig(JSON.parse(resolvedStatus.SidebarModulesAdmin));
+      } catch (error) {
+        return mergeAdminConfig(null);
+      }
+    }
+
+    return mergeAdminConfig(null);
+  }, [resolvedStatus, statusReady]);
+  const canAccess = useMemo(() => {
+    if (!adminConfig) return null;
+    return isRoleAwareModuleVisible(
+      adminConfig,
+      'console',
+      'group-monitor',
+      isAdmin(),
+    );
+  }, [adminConfig]);
+  const shouldEnableData = canAccess !== false;
+  const { data, loading, hours, setHours, lastUpdate, refresh } =
+    useGroupMonitorData(shouldEnableData);
+
+  if (canAccess === false) {
+    return <Navigate to="/console" replace />;
+  }
 
   return (
     <div className="group-monitor-page">

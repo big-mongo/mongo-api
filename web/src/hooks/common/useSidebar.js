@@ -37,6 +37,7 @@ export const DEFAULT_ADMIN_CONFIG = {
     token: true,
     log: true,
     'group-monitor': true,
+    'group-monitor-admin': true,
     midjourney: true,
     task: true,
   },
@@ -58,6 +59,65 @@ export const DEFAULT_ADMIN_CONFIG = {
 };
 
 const deepClone = (value) => JSON.parse(JSON.stringify(value));
+const hasOwn = (target, key) =>
+  Object.prototype.hasOwnProperty.call(target || {}, key);
+const isCurrentUserAdmin = () => {
+  try {
+    const rawUser = localStorage.getItem('user');
+    if (!rawUser) return false;
+    const user = JSON.parse(rawUser);
+    return typeof user?.role === 'number' && user.role >= 10;
+  } catch (error) {
+    return false;
+  }
+};
+
+const migrateUserConfigForRole = (config, isAdminUser) => {
+  if (!config || typeof config !== 'object') {
+    return config;
+  }
+
+  const normalizedConfig = deepClone(config);
+  const consoleConfig = normalizedConfig.console;
+  if (
+    isAdminUser &&
+    consoleConfig &&
+    hasOwn(consoleConfig, 'group-monitor') &&
+    !hasOwn(consoleConfig, 'group-monitor-admin')
+  ) {
+    consoleConfig['group-monitor-admin'] = consoleConfig['group-monitor'];
+  }
+
+  return normalizedConfig;
+};
+
+export const resolveRoleAwareModuleKey = (
+  sectionConfig,
+  moduleKey,
+  isAdminUser = isCurrentUserAdmin(),
+) => {
+  const adminScopedKey = `${moduleKey}-admin`;
+  if (isAdminUser && hasOwn(sectionConfig, adminScopedKey)) {
+    return adminScopedKey;
+  }
+  return moduleKey;
+};
+
+export const isRoleAwareModuleVisible = (
+  config,
+  sectionKey,
+  moduleKey,
+  isAdminUser = isCurrentUserAdmin(),
+) => {
+  const section = config?.[sectionKey];
+  if (!section?.enabled) return false;
+  const resolvedModuleKey = resolveRoleAwareModuleKey(
+    section,
+    moduleKey,
+    isAdminUser,
+  );
+  return section[resolvedModuleKey] === true;
+};
 
 export const mergeAdminConfig = (savedConfig) => {
   const merged = deepClone(DEFAULT_ADMIN_CONFIG);
@@ -74,6 +134,15 @@ export const mergeAdminConfig = (savedConfig) => {
     merged[sectionKey] = { ...merged[sectionKey], ...sectionConfig };
   }
 
+  const savedConsoleConfig = savedConfig.console;
+  if (
+    savedConsoleConfig &&
+    hasOwn(savedConsoleConfig, 'group-monitor') &&
+    !hasOwn(savedConsoleConfig, 'group-monitor-admin')
+  ) {
+    merged.console['group-monitor-admin'] = savedConsoleConfig['group-monitor'];
+  }
+
   return merged;
 };
 
@@ -83,6 +152,7 @@ export const useSidebar = () => {
   const [loading, setLoading] = useState(true);
   const instanceIdRef = useRef(null);
   const hasLoadedOnceRef = useRef(false);
+  const currentUserIsAdmin = isCurrentUserAdmin();
 
   if (!instanceIdRef.current) {
     const randomPart = Math.random().toString(16).slice(2);
@@ -123,7 +193,7 @@ export const useSidebar = () => {
         } else {
           config = res.data.data.sidebar_modules;
         }
-        setUserConfig(config);
+        setUserConfig(migrateUserConfigForRole(config, currentUserIsAdmin));
       } else {
         // 当用户没有配置时，生成一个基于管理员配置的默认用户配置
         // 这样可以确保权限控制正确生效
@@ -132,14 +202,16 @@ export const useSidebar = () => {
           if (adminConfig[sectionKey]?.enabled) {
             defaultUserConfig[sectionKey] = { enabled: true };
             // 为每个管理员允许的模块设置默认值为true
-            Object.keys(adminConfig[sectionKey]).forEach((moduleKey) => {
-              if (
-                moduleKey !== 'enabled' &&
-                adminConfig[sectionKey][moduleKey]
-              ) {
-                defaultUserConfig[sectionKey][moduleKey] = true;
-              }
-            });
+              Object.keys(adminConfig[sectionKey]).forEach((moduleKey) => {
+                if (
+                  moduleKey !== 'enabled' &&
+                  adminConfig[sectionKey][moduleKey] &&
+                  (!moduleKey.endsWith('-admin') || currentUserIsAdmin)
+                ) {
+                  defaultUserConfig[sectionKey][moduleKey] = true;
+                }
+              });
+
           }
         });
         setUserConfig(defaultUserConfig);
@@ -151,7 +223,11 @@ export const useSidebar = () => {
         if (adminConfig[sectionKey]?.enabled) {
           defaultUserConfig[sectionKey] = { enabled: true };
           Object.keys(adminConfig[sectionKey]).forEach((moduleKey) => {
-            if (moduleKey !== 'enabled' && adminConfig[sectionKey][moduleKey]) {
+            if (
+              moduleKey !== 'enabled' &&
+              adminConfig[sectionKey][moduleKey] &&
+              (!moduleKey.endsWith('-admin') || currentUserIsAdmin)
+            ) {
               defaultUserConfig[sectionKey][moduleKey] = true;
             }
           });
@@ -263,7 +339,12 @@ export const useSidebar = () => {
   // 检查特定功能是否应该显示
   const isModuleVisible = (sectionKey, moduleKey = null) => {
     if (moduleKey) {
-      return finalConfig[sectionKey]?.[moduleKey] === true;
+      return isRoleAwareModuleVisible(
+        finalConfig,
+        sectionKey,
+        moduleKey,
+        currentUserIsAdmin,
+      );
     } else {
       return finalConfig[sectionKey]?.enabled === true;
     }
@@ -274,9 +355,12 @@ export const useSidebar = () => {
     const section = finalConfig[sectionKey];
     if (!section?.enabled) return false;
 
-    return Object.keys(section).some(
-      (key) => key !== 'enabled' && section[key] === true,
-    );
+    return Object.keys(section).some((key) => {
+      if (key === 'enabled' || key.endsWith('-admin')) {
+        return false;
+      }
+      return isModuleVisible(sectionKey, key);
+    });
   };
 
   // 获取区域的可见功能列表
@@ -284,9 +368,12 @@ export const useSidebar = () => {
     const section = finalConfig[sectionKey];
     if (!section?.enabled) return [];
 
-    return Object.keys(section).filter(
-      (key) => key !== 'enabled' && section[key] === true,
-    );
+    return Object.keys(section).filter((key) => {
+      if (key === 'enabled' || key.endsWith('-admin')) {
+        return false;
+      }
+      return isModuleVisible(sectionKey, key);
+    });
   };
 
   return {

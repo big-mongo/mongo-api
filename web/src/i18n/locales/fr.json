@@ -414,6 +414,8 @@
     "使用ID排序": "Trier par ID",
     "使用日志": "Journaux",
     "分组监控": "Surveillance de groupe",
+    "分组监控（管理员）": "Surveillance de groupe (admin)",
+    "控制管理员是否显示和访问分组监控": "Contrôler si les administrateurs peuvent voir et accéder à la surveillance de groupe",
     "首字": "Premier Jeton",
     "分组可用率和首字响应时间监控": "Surveillance de disponibilité et latence du premier jeton",
     "使用模式": "Mode d'utilisation",

@@ -21,7 +21,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { API, showError } from '../../helpers';
 
-export const useGroupMonitorData = () => {
+export const useGroupMonitorData = (enabled = true) => {
   const { t } = useTranslation();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,6 +29,11 @@ export const useGroupMonitorData = () => {
   const [lastUpdate, setLastUpdate] = useState(null);
 
   const fetchData = useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await API.get(`/api/group/monitor?hours=${hours}`);
@@ -44,13 +49,21 @@ export const useGroupMonitorData = () => {
     } finally {
       setLoading(false);
     }
-  }, [hours]);
+  }, [enabled, hours]);
 
   useEffect(() => {
+    if (!enabled) {
+      setData([]);
+      setLastUpdate(null);
+      setLoading(false);
+      return;
+    }
+
     fetchData();
-  }, [fetchData]);
+  }, [enabled, fetchData]);
 
   const refresh = () => {
+    if (!enabled) return;
     fetchData();
   };
 
