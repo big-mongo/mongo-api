@@ -36,6 +36,7 @@ import Token from './pages/Token';
 import Redemption from './pages/Redemption';
 import TopUp from './pages/TopUp';
 import Log from './pages/Log';
+import GroupMonitor from './pages/GroupMonitor';
 import Chat from './pages/Chat';
 import Chat2Link from './pages/Chat2Link';
 import Midjourney from './pages/Midjourney';
@@ -291,6 +292,14 @@ function App() {
           element={
             <PrivateRoute>
               <Log />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path='/console/group-monitor'
+          element={
+            <PrivateRoute>
+              <GroupMonitor />
             </PrivateRoute>
           }
         />
