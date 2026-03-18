@@ -1,4 +1,30 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+/*
+Copyright (C) 2025 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { API } from '../../helpers';
+import { renderQuota } from '../../helpers';
+import { getCurrencyConfig } from '../../helpers/render';
+import {
+  formatSubscriptionDuration,
+  formatSubscriptionResetPeriod,
+} from '../../helpers/subscriptionFormat';
 
 const MODELS = [
   { name: 'gpt-5.1', color: '#10a37f' },
@@ -24,60 +50,151 @@ const ENTERPRISE_FEATURES = [
   'IP 白名单 + 密钥按期轮换安全策略',
 ];
 
-// --- 新增: Codex 订阅套餐数据 ---
-const CODEX_PLANS = [
-  {
-    id: 'flagship',
-    name: 'Codex-旗舰版',
-    subtitle: '有效期一个月,每日自动刷新',
-    price: '85.90',
-    period: '1 个月',
-    reset: '每天',
-    totalQuota: '¥90.00',
-    group: 'OpenAI Codex 订阅组',
-    recommended: true
-  },
-  {
-    id: 'monthly-large',
-    name: 'Codex月包-大容量',
-    subtitle: '有效期一个月,每日自动刷新',
-    price: '69.90',
-    period: '1 个月',
-    reset: '每天',
-    totalQuota: '¥60.00',
-    group: 'OpenAI Codex 订阅组'
-  },
-  {
-    id: 'monthly-starter',
-    name: 'Codex月包-入门',
-    subtitle: '有效期一个月,每日自动刷新',
-    price: '49.90',
-    period: '1 个月',
-    reset: '每天',
-    totalQuota: '¥30.00',
-    group: 'OpenAI Codex 订阅组'
-  },
-  {
-    id: 'weekly',
-    name: 'Codex周包',
-    subtitle: '有效期一周,每日自动刷新',
-    price: '19.90',
-    period: '7 天',
-    reset: '每天',
-    totalQuota: '¥30.00',
-    group: 'OpenAI Codex 订阅组'
-  },
-  {
-    id: 'daily',
-    name: 'Codex日包(尝鲜)',
-    subtitle: '24小时生效',
-    price: '2.90',
-    period: '1 天',
-    reset: '每天',
-    totalQuota: '¥30.00',
-    group: 'OpenAI Codex 订阅组'
+const passthroughText = (text) => text;
+
+const hasUsablePlan = (record) => {
+  const plan = record?.plan;
+  return !!plan && String(plan.title || '').trim().length > 0;
+};
+
+const getLandingPlanPriceDisplay = (plan) => {
+  const { symbol, rate } = getCurrencyConfig();
+  const price = Number(plan?.price_amount || 0);
+  const convertedPrice = price * rate;
+
+  return {
+    symbol,
+    value: convertedPrice.toFixed(Number.isInteger(convertedPrice) ? 0 : 2),
+  };
+};
+
+const getPlanDurationSeconds = (plan) => {
+  const durationValue = Number(plan?.duration_value || 1);
+  const customSeconds = Number(plan?.custom_seconds || 0);
+
+  switch (plan?.duration_unit || 'month') {
+    case 'year':
+      return durationValue * 365 * 24 * 60 * 60;
+    case 'month':
+      return durationValue * 30 * 24 * 60 * 60;
+    case 'day':
+      return durationValue * 24 * 60 * 60;
+    case 'hour':
+      return durationValue * 60 * 60;
+    case 'custom':
+      return customSeconds;
+    default:
+      return 0;
   }
-];
+};
+
+const getPlanResetSeconds = (plan) => {
+  switch (getNormalizedResetPeriod(plan)) {
+    case 'daily':
+      return 24 * 60 * 60;
+    case 'weekly':
+      return 7 * 24 * 60 * 60;
+    case 'monthly':
+      return 30 * 24 * 60 * 60;
+    case 'custom':
+      return Number(plan?.quota_reset_custom_seconds || 0);
+    default:
+      return 0;
+  }
+};
+
+const getNormalizedResetPeriod = (plan) => {
+  const rawPeriod = String(plan?.quota_reset_period || '').trim();
+  if (['daily', 'weekly', 'monthly', 'custom'].includes(rawPeriod)) {
+    return rawPeriod;
+  }
+
+  return 'never';
+};
+
+const getPlanCycleCount = (plan) => {
+  const durationSeconds = getPlanDurationSeconds(plan);
+  const resetSeconds = getPlanResetSeconds(plan);
+
+  if (durationSeconds <= 0 || resetSeconds <= 0) {
+    return 1;
+  }
+
+  return Math.max(1, Math.ceil(durationSeconds / resetSeconds));
+};
+
+const getLandingPlanBenefits = (plan) => {
+  const totalAmount = Number(plan?.total_amount || 0);
+  const limit = Number(plan?.max_purchase_per_user || 0);
+  const normalizedResetPeriod = getNormalizedResetPeriod(plan);
+  const resetPeriod =
+    normalizedResetPeriod === 'never'
+      ? '不重置'
+      : formatSubscriptionResetPeriod(
+          {
+            ...plan,
+            quota_reset_period: normalizedResetPeriod,
+          },
+          passthroughText,
+        );
+  const cycleCount = getPlanCycleCount(plan);
+  const cycleTotalAmount = totalAmount > 0 ? totalAmount * cycleCount : 0;
+  const hasRecurringReset = normalizedResetPeriod !== 'never';
+
+  // 根据重置周期获取额度标签
+  const getPeriodQuotaLabel = () => {
+    if (!hasRecurringReset) return '总额度';
+    switch (normalizedResetPeriod) {
+      case 'daily':
+        return '每日额度';
+      case 'weekly':
+        return '每周额度';
+      case 'monthly':
+        return '每月额度';
+      case 'custom':
+        return '每周期额度';
+      default:
+        return '总额度';
+    }
+  };
+
+  const periodQuotaLabel = getPeriodQuotaLabel();
+  const periodQuotaValue =
+    totalAmount > 0 ? renderQuota(totalAmount) : '不限';
+  const periodQuotaLabelText = `${periodQuotaLabel}: ${periodQuotaValue}`;
+
+  const cycleTotalLabel =
+    cycleTotalAmount > 0
+      ? `周期内总额度: ${renderQuota(cycleTotalAmount)}`
+      : '周期内总额度: 不限';
+  const resetLabel =
+    resetPeriod === '不重置' ? null : `额度重置: ${resetPeriod}`;
+  const limitLabel = limit > 0 ? `限购: ${limit}` : null;
+  const upgradeLabel = plan?.upgrade_group
+    ? `升级分组: ${plan.upgrade_group}`
+    : null;
+
+  return [
+    {
+      label: `有效期: ${formatSubscriptionDuration(plan, passthroughText)}`,
+    },
+    resetLabel ? { label: resetLabel } : null,
+    totalAmount > 0
+      ? {
+          label: periodQuotaLabelText,
+          tooltip: `原生额度：${totalAmount}`,
+        }
+      : { label: periodQuotaLabelText },
+    hasRecurringReset && cycleTotalAmount > 0
+      ? {
+          label: cycleTotalLabel,
+          tooltip: `按有效期与重置周期估算：${renderQuota(totalAmount)} x ${cycleCount}`,
+        }
+      : null,
+    limitLabel ? { label: limitLabel } : null,
+    upgradeLabel ? { label: upgradeLabel } : null,
+  ].filter(Boolean);
+};
 
 // --- Icons ---
 const IconBase = ({ children, className }) => (
@@ -116,14 +233,6 @@ const IconCheck = ({ className }) => (
 const IconBolt = ({ className }) => (
   <IconBase className={className}>
     <path d="M13 2 5 13h5l-1 9 8-11h-5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-  </IconBase>
-);
-
-const IconLayers = ({ className }) => (
-  <IconBase className={className}>
-    <path d="m12 4 8 4-8 4-8-4z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    <path d="m4 12 8 4 8-4" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    <path d="m4 16 8 4 8-4" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
   </IconBase>
 );
 
@@ -199,6 +308,21 @@ const Orbit = () => (
 const Landing = () => {
   const [scrolled, setScrolled] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(null);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState('');
+
+  const normalizedPlans = useMemo(
+    () => subscriptionPlans.filter(hasUsablePlan),
+    [subscriptionPlans],
+  );
+  const sectionTitle = '订阅套餐';
+  const sectionSubtitle =
+    '以下套餐已从公开订阅接口实时同步，方便访客在登录前先了解当前可购买方案。';
+  const ruleTitle = '套餐说明：';
+  const ruleText =
+    '套餐信息直接同步自后台公开订阅接口，具体有效期、重置规则、总额度与升级分组以下方卡片展示为准。';
+  const fallbackSubtitle = '登录后可在控制台继续查看套餐详情并完成购买。';
 
   const handleCopyUrl = useCallback((url) => {
     navigator.clipboard.writeText(url).then(() => {
@@ -231,6 +355,50 @@ const Landing = () => {
       window.removeEventListener('scroll', handleScroll);
       observer.disconnect();
       document.body.style.backgroundColor = originalBodyBg;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchSubscriptionPlans = async () => {
+      setPlansLoading(true);
+      setPlansError('');
+
+      try {
+        const res = await API.get('/api/subscription/plans', {
+          skipErrorHandler: true,
+        });
+
+        if (!active) {
+          return;
+        }
+
+        if (res.data?.success) {
+          setSubscriptionPlans(Array.isArray(res.data.data) ? res.data.data : []);
+          return;
+        }
+
+        setSubscriptionPlans([]);
+        setPlansError(res.data?.message || '套餐信息暂时不可用');
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setSubscriptionPlans([]);
+        setPlansError('套餐信息暂时不可用');
+      } finally {
+        if (active) {
+          setPlansLoading(false);
+        }
+      }
+    };
+
+    fetchSubscriptionPlans();
+
+    return () => {
+      active = false;
     };
   }, []);
 
@@ -874,8 +1042,90 @@ const Landing = () => {
 
         .landing-iso__codex-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 20px;
+        }
+
+        .landing-iso__codex-state {
+          grid-column: 1 / -1;
+          min-height: 220px;
+          border-radius: var(--radius-lg);
+          border: 1px dashed rgba(255, 255, 255, 0.14);
+          background: rgba(255, 255, 255, 0.02);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 32px 24px;
+          text-align: center;
+        }
+
+        .landing-iso__codex-state-title {
+          margin: 0;
+          font-size: 1.05rem;
+          font-weight: 700;
+          color: var(--ink-main);
+        }
+
+        .landing-iso__codex-state-copy {
+          margin: 0;
+          max-width: 520px;
+          color: var(--ink-soft);
+          font-size: 0.92rem;
+          line-height: 1.6;
+        }
+
+        .landing-iso__codex-card--loading {
+          pointer-events: none;
+        }
+
+        .landing-iso__codex-skeleton {
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+          background-size: 200% 100%;
+          animation: landing-iso-shimmer 1.6s linear infinite;
+        }
+
+        .landing-iso__codex-skeleton--title {
+          width: 75%;
+          height: 18px;
+          margin-bottom: 12px;
+        }
+
+        .landing-iso__codex-skeleton--subtitle {
+          width: 100%;
+          height: 12px;
+          margin-bottom: 10px;
+        }
+
+        .landing-iso__codex-skeleton--subtitle-short {
+          width: 60%;
+          height: 12px;
+          margin-bottom: 24px;
+        }
+
+        .landing-iso__codex-skeleton--price {
+          width: 50%;
+          height: 40px;
+          margin-bottom: 24px;
+        }
+
+        .landing-iso__codex-skeleton--feature {
+          width: 100%;
+          height: 12px;
+          margin-bottom: 14px;
+        }
+
+        .landing-iso__codex-skeleton--button {
+          width: 100%;
+          height: 42px;
+          margin-top: auto;
+        }
+
+        @keyframes landing-iso-shimmer {
+          from { background-position: 200% 0; }
+          to { background-position: -200% 0; }
         }
 
         .landing-iso__codex-card {
@@ -956,7 +1206,7 @@ const Landing = () => {
           font-size: 2.2rem;
           font-weight: 800;
           color: white;
-          margin: 0 0 24px;
+          margin: 0 0 12px;
           display: flex;
           align-items: baseline;
         }
@@ -971,6 +1221,31 @@ const Landing = () => {
           padding: 0;
           margin: 0 0 28px 0;
           flex: 1;
+        }
+
+        .landing-iso__codex-meta {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 20px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: var(--ink-soft);
+          font-size: 0.75rem;
+        }
+
+        .landing-iso__codex-meta strong {
+          color: var(--ink-main);
+          font-weight: 600;
+        }
+
+        .landing-iso__codex-quota-note {
+          margin-top: 2px;
+          color: rgba(255, 255, 255, 0.45);
+          font-size: 0.72rem;
+          line-height: 1.4;
         }
 
         .landing-iso__codex-features li {
@@ -1542,6 +1817,7 @@ const Landing = () => {
           .landing-iso__tri-grid { grid-template-columns: 1fr; }
           .landing-iso__stats-grid { grid-template-columns: repeat(2, 1fr); }
           .landing-iso__footer-main { flex-direction: column; text-align: center; }
+          .landing-iso__codex-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (max-width: 600px) {
@@ -1789,12 +2065,12 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* --- 新增: Codex 专属订阅套餐 --- */}
-      <section id="codex-plans" className="landing-iso__section reveal" style={{ paddingTop: 40 }}>
+      {/* --- 公开订阅套餐 --- */}
+      <section id="subscription-plans" className="landing-iso__section reveal" style={{ paddingTop: 40 }}>
         <div className="landing-iso__container">
-          <h2 className="landing-iso__section-title">Codex 专属订阅套餐</h2>
+          <h2 className="landing-iso__section-title">{sectionTitle}</h2>
           <p className="landing-iso__section-subtitle" style={{ marginBottom: 24 }}>
-            专为高频代码生成、IDE 智能补全场景打造。每日自动刷新调用额度，提供更极致的性价比体验。
+            {sectionSubtitle}
           </p>
 
           <div className="landing-iso__codex-rule">
@@ -1803,38 +2079,77 @@ const Landing = () => {
               <polyline points="13 2 13 9 20 9"></polyline>
             </svg>
             <div className="landing-iso__codex-rule-text">
-              <strong>额度发放规则：</strong>以月包为例，有效期一个月，每日自动刷新额度。总额度计算方式为：每日额度 × 天数（例如：30*60=1800）。
+              <strong>{ruleTitle}</strong>{ruleText}
             </div>
           </div>
 
           <div className="landing-iso__codex-grid">
-            {CODEX_PLANS.map((plan) => (
-              <div 
-                key={plan.id} 
-                className={`landing-iso__codex-card ${plan.recommended ? 'landing-iso__codex-card--recommended' : ''} ${plan.highlight ? 'has-highlight' : ''}`}
-              >
-                {plan.recommended && <div className="landing-iso__codex-badge">✨ 推荐</div>}
-                {plan.highlight && <div className="landing-iso__codex-highlight">{plan.highlight}</div>}
-                
-                <h3 className="landing-iso__codex-title">{plan.name}</h3>
-                <p className="landing-iso__codex-subtitle">{plan.subtitle}</p>
+            {plansLoading
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`codex-skeleton-${index}`} className="landing-iso__codex-card landing-iso__codex-card--loading">
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--title" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--subtitle" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--subtitle-short" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--price" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--feature" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--feature" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--feature" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--feature" />
+                    <div className="landing-iso__codex-skeleton landing-iso__codex-skeleton--button" />
+                  </div>
+                ))
+              : normalizedPlans.length > 0
+                ? normalizedPlans.map((record) => {
+                    const plan = record.plan;
+                    const { symbol, value: displayPrice } =
+                      getLandingPlanPriceDisplay(plan);
+                    const planBenefits = getLandingPlanBenefits(plan);
 
-                <div className="landing-iso__codex-price">
-                  <span>¥</span>{plan.price}
-                </div>
-                
-                <ul className="landing-iso__codex-features">
-                  <li>有效期: <strong>{plan.period}</strong></li>
-                  <li>额度重置: <strong>{plan.reset}</strong></li>
-                  <li>总额度: <strong>{plan.totalQuota}</strong></li>
-                  <li>升级分组: {plan.group}</li>
-                </ul>
-                
-                <button className={`landing-iso__codex-btn ${plan.recommended ? 'landing-iso__codex-btn--recommended' : ''}`}>
-                  立即订阅
-                </button>
-              </div>
-            ))}
+                    return (
+                      <div
+                        key={plan.id}
+                        className="landing-iso__codex-card"
+                      >
+                        <h3 className="landing-iso__codex-title">{plan.title}</h3>
+                        <p className="landing-iso__codex-subtitle">
+                          {plan.subtitle || fallbackSubtitle}
+                        </p>
+
+                        <div className="landing-iso__codex-price">
+                          <span>{symbol}</span>{displayPrice}
+                        </div>
+
+                        <ul className="landing-iso__codex-features">
+                          {planBenefits.map((item) => (
+                            <li key={item.label} title={item.tooltip || undefined}>
+                              <strong>{item.label}</strong>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <a
+                          href="/topup"
+                          className="landing-iso__codex-btn"
+                        >
+                          立即订阅
+                        </a>
+                      </div>
+                    );
+                  })
+                : (
+                  <div className="landing-iso__codex-state">
+                    <h3 className="landing-iso__codex-state-title">
+                      {plansError ? '套餐信息暂时不可用' : '暂未发布公开订阅套餐'}
+                    </h3>
+                    <p className="landing-iso__codex-state-copy">
+                      {plansError
+                        ? `${plansError}，你可以稍后刷新页面重试，或先登录控制台查看可购买订阅。`
+                        : subscriptionPlans.length > 0
+                          ? '当前套餐数据已返回，但没有可展示的计划详情，请检查后台套餐字段是否完整。'
+                          : '当前还没有可公开展示的订阅套餐，上架后这里会自动同步最新内容。'}
+                    </p>
+                  </div>
+                )}
           </div>
         </div>
       </section>
