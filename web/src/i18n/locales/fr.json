@@ -387,6 +387,7 @@
     "企业账户为特殊返回格式，需要特殊处理，如果非企业账户，请勿勾选": "Les comptes d'entreprise ont un format de retour spécial et nécessitent un traitement particulier. Si ce n'est pas un compte d'entreprise, veuillez ne pas cocher cette case.",
     "优先级": "Priorité",
     "优先订阅": "Abonnement en priorité",
+    "购买成功后，如你尚未设置扣费偏好，系统会默认切换为优先订阅。你也可以前往钱包管理中设置为优先订阅。": "Après l'achat, si vous n'avez pas encore défini de préférence de facturation, le système passera par défaut à l'abonnement en priorité. Vous pouvez aussi aller dans Gestion du portefeuille pour définir Abonnement en priorité.",
     "优先钱包": "Portefeuille en priorité",
     "优惠": "Remise",
     "低于此额度时将发送邮件提醒用户": "Un rappel par e-mail sera envoyé lorsque le quota tombera en dessous de ce seuil",

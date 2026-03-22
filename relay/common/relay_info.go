@@ -88,6 +88,7 @@ type RelayInfo struct {
 	TokenGroup        string
 	UserId            int
 	UsingGroup        string // 使用的分组，当auto跨分组重试时，会变动
+	BillingGroup      string // 计费开始时冻结的分组，用于订阅生效判定
 	UserGroup         string // 用户所在分组
 	TokenUnlimited    bool
 	StartTime         time.Time

@@ -58,6 +58,11 @@ const SubscriptionPurchaseModal = ({
   onPayEpay,
 }) => {
   const plan = selectedPlan?.plan;
+  const allowedTokenGroups = (plan?.allowed_token_groups || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(', ');
   const totalAmount = Number(plan?.total_amount || 0);
   const { symbol, rate } = getCurrencyConfig();
   const price = plan ? Number(plan.price_amount || 0) : 0;
@@ -156,6 +161,37 @@ const SubscriptionPurchaseModal = ({
                   </Text>
                 </div>
               ) : null}
+              {allowedTokenGroups ? (
+                <div className='flex justify-between items-center'>
+                  <Text strong className='text-slate-700 dark:text-slate-200'>
+                    {t('生效分组')}：
+                  </Text>
+                  <Text
+                    className='text-slate-900 dark:text-slate-100 text-right'
+                    style={{ maxWidth: 220 }}
+                  >
+                    {allowedTokenGroups}
+                  </Text>
+                </div>
+              ) : null}
+              {allowedTokenGroups ? (
+                <Banner
+                  type='info'
+                  description={t(
+                    '仅当你使用命中这些分组的 key 时，订阅才会生效并参与抵扣',
+                  )}
+                  className='!rounded-xl'
+                  closeIcon={null}
+                />
+              ) : null}
+              <Banner
+                type='info'
+                description={t(
+                  '购买成功后，如你尚未设置扣费偏好，系统会默认切换为优先订阅。你也可以前往钱包管理中设置为优先订阅。',
+                )}
+                className='!rounded-xl'
+                closeIcon={null}
+              />
               <Divider margin={8} />
               <div className='flex justify-between items-center'>
                 <Text strong className='text-slate-700 dark:text-slate-200'>

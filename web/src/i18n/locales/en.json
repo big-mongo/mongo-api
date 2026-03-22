@@ -391,6 +391,7 @@
     "企业账户为特殊返回格式，需要特殊处理，如果非企业账户，请勿勾选": "Enterprise accounts have special return format and require special handling. If not an enterprise account, do not check this option",
     "优先级": "Priority",
     "优先订阅": "Subscription first",
+    "购买成功后，如你尚未设置扣费偏好，系统会默认切换为优先订阅。你也可以前往钱包管理中设置为优先订阅。": "After purchase, if you have not set a billing preference yet, the system will default to Subscription first. You can also go to Wallet Management to set Subscription first.",
     "优先钱包": "Wallet first",
     "优惠": "Discount",
     "低于此额度时将发送邮件提醒用户": "Email reminder will be sent when quota falls below this",

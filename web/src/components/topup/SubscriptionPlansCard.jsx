@@ -39,6 +39,18 @@ import {
   formatSubscriptionResetPeriod,
 } from '../../helpers/subscriptionFormat';
 
+function formatAllowedTokenGroups(plan, t) {
+  const raw = plan?.allowed_token_groups || '';
+  if (!raw) return null;
+  const groups = raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(', ');
+  if (!groups) return null;
+  return `${t('生效分组')}: ${groups}`;
+}
+
 const { Text } = Typography;
 
 // 过滤易支付方式
@@ -498,6 +510,10 @@ const SubscriptionPlansCard = ({
                 const upgradeLabel = plan?.upgrade_group
                   ? `${t('升级分组')}: ${plan.upgrade_group}`
                   : null;
+                const allowedTokenGroupsLabel = formatAllowedTokenGroups(
+                  plan,
+                  t,
+                );
                 const resetLabel =
                   formatSubscriptionResetPeriod(plan, t) === t('不重置')
                     ? null
@@ -515,6 +531,14 @@ const SubscriptionPlansCard = ({
                     : { label: totalLabel },
                   limitLabel ? { label: limitLabel } : null,
                   upgradeLabel ? { label: upgradeLabel } : null,
+                  allowedTokenGroupsLabel
+                    ? {
+                        label: allowedTokenGroupsLabel,
+                        tooltip: t(
+                          '仅当你使用命中这些分组的 key 时，订阅才会生效并参与抵扣',
+                        ),
+                      }
+                    : null,
                 ].filter(Boolean);
 
                 return (
