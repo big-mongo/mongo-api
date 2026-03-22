@@ -64,6 +64,22 @@ const resetPeriodOptions = [
   { value: 'custom', label: '自定义(秒)' },
 ];
 
+const splitAllowedTokenGroups = (value) => {
+  if (!value) return [];
+  return String(value)
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const joinAllowedTokenGroups = (value) => {
+  if (!Array.isArray(value) || value.length === 0) return '';
+  const uniqueValues = Array.from(
+    new Set(value.map((item) => String(item).trim()).filter(Boolean)),
+  );
+  return uniqueValues.join(',');
+};
+
 const AddEditSubscriptionModal = ({
   visible,
   handleClose,
@@ -95,6 +111,7 @@ const AddEditSubscriptionModal = ({
     max_purchase_per_user: 0,
     total_amount: 0,
     upgrade_group: '',
+    allowed_token_groups: [],
     stripe_price_id: '',
     creem_product_id: '',
   });
@@ -121,6 +138,7 @@ const AddEditSubscriptionModal = ({
         quotaToDisplayAmount(p.total_amount || 0).toFixed(2),
       ),
       upgrade_group: p.upgrade_group || '',
+      allowed_token_groups: splitAllowedTokenGroups(p.allowed_token_groups),
       stripe_price_id: p.stripe_price_id || '',
       creem_product_id: p.creem_product_id || '',
     };
@@ -164,6 +182,9 @@ const AddEditSubscriptionModal = ({
           max_purchase_per_user: Number(values.max_purchase_per_user || 0),
           total_amount: displayAmountToQuota(values.total_amount),
           upgrade_group: values.upgrade_group || '',
+          allowed_token_groups: joinAllowedTokenGroups(
+            values.allowed_token_groups,
+          ),
         },
       };
       if (editingPlan?.plan?.id) {
@@ -340,6 +361,22 @@ const AddEditSubscriptionModal = ({
                           </Select.Option>
                         ))}
                       </Form.Select>
+                    </Col>
+
+                    <Col span={12}>
+                      <Form.Select
+                        field='allowed_token_groups'
+                        label={t('允许令牌分组')}
+                        multiple
+                        showClear
+                        loading={groupLoading}
+                        placeholder={t('不限制')}
+                        extraText={t('留空表示不限制，支持多选')}
+                        optionList={(groupOptions || []).map((g) => ({
+                          label: g,
+                          value: g,
+                        }))}
+                      />
                     </Col>
 
                     <Col span={12}>

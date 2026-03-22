@@ -64,6 +64,16 @@ function formatResetPeriod(plan, t) {
   return t('不重置');
 }
 
+function formatAllowedTokenGroups(plan, t) {
+  const raw = plan?.allowed_token_groups || '';
+  if (!raw) return t('不限制');
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
 const renderPlanTitle = (text, record, t) => {
   const subtitle = record?.plan?.subtitle;
   const plan = record?.plan;
@@ -91,6 +101,8 @@ const renderPlanTitle = (text, record, t) => {
         )}
         <Text type='tertiary'>{t('升级分组')}</Text>
         <Text>{plan?.upgrade_group ? plan.upgrade_group : t('不升级')}</Text>
+        <Text type='tertiary'>{t('允许令牌分组')}</Text>
+        <Text>{formatAllowedTokenGroups(plan, t)}</Text>
         <Text type='tertiary'>{t('购买上限')}</Text>
         <Text>
           {plan?.max_purchase_per_user > 0

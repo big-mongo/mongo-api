@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/model"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
@@ -15,6 +17,31 @@ import (
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
 )
+
+func resolveBillingGroup(c *gin.Context, relayInfo *relaycommon.RelayInfo) string {
+	group := common.GetContextKeyString(c, constant.ContextKeyUsingGroup)
+	if group != "" {
+		return group
+	}
+	group = common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
+	if group != "" {
+		return group
+	}
+	group = common.GetContextKeyString(c, constant.ContextKeyUserGroup)
+	if group != "" {
+		return group
+	}
+	if relayInfo != nil {
+		if relayInfo.UsingGroup != "" {
+			return relayInfo.UsingGroup
+		}
+		if relayInfo.TokenGroup != "" {
+			return relayInfo.TokenGroup
+		}
+		return relayInfo.UserGroup
+	}
+	return ""
+}
 
 // ---------------------------------------------------------------------------
 // BillingSession — 统一计费会话
@@ -175,7 +202,12 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 			}
 			s.tokenConsumed = 0
 		}
-		// TODO: model 层应定义哨兵错误（如 ErrNoActiveSubscription），用 errors.Is 替代字符串匹配
+		if errors.Is(err, model.ErrNoActiveSubscription) || errors.Is(err, model.ErrSubscriptionQuotaInsufficient) {
+			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", err.Error()), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
+		if errors.Is(err, model.ErrSubscriptionGroupNotAllowed) {
+			return types.NewErrorWithStatusCode(fmt.Errorf("当前令牌分组不可使用该订阅套餐"), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
+		}
 		errMsg := err.Error()
 		if strings.Contains(errMsg, "no active subscription") || strings.Contains(errMsg, "subscription quota insufficient") {
 			return types.NewErrorWithStatusCode(fmt.Errorf("订阅额度不足或未配置订阅: %s", errMsg), types.ErrorCodeInsufficientUserQuota, http.StatusForbidden, types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
@@ -256,6 +288,8 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 	if relayInfo == nil {
 		return nil, types.NewError(fmt.Errorf("relayInfo is nil"), types.ErrorCodeInvalidRequest, types.ErrOptionWithSkipRetry())
 	}
+	billingGroup := resolveBillingGroup(c, relayInfo)
+	relayInfo.BillingGroup = billingGroup
 
 	pref := common.NormalizeBillingPreference(relayInfo.UserSetting.BillingPreference)
 
@@ -297,10 +331,11 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		session := &BillingSession{
 			relayInfo: relayInfo,
 			funding: &SubscriptionFunding{
-				requestId: relayInfo.RequestId,
-				userId:    relayInfo.UserId,
-				modelName: relayInfo.OriginModelName,
-				amount:    subConsume,
+				requestId:    relayInfo.RequestId,
+				userId:       relayInfo.UserId,
+				modelName:    relayInfo.OriginModelName,
+				amount:       subConsume,
+				billingGroup: billingGroup,
 			},
 		}
 		// 必须传 subConsume 而非 preConsumedQuota，保证 SubscriptionFunding.amount、
