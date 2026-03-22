@@ -562,6 +562,23 @@ func CreateUserSubscriptionFromPlanTx(tx *gorm.DB, userId int, plan *Subscriptio
 }
 
 // Complete a subscription order (idempotent). Creates a UserSubscription snapshot from the plan.
+func ensureDefaultSubscriptionFirstPreference(userId int) error {
+	if userId <= 0 {
+		return nil
+	}
+	user, err := GetUserById(userId, false)
+	if err != nil {
+		return err
+	}
+	current := user.GetSetting()
+	if strings.TrimSpace(current.BillingPreference) != "" {
+		return nil
+	}
+	current.BillingPreference = common.NormalizeBillingPreference("subscription_first")
+	user.SetSetting(current)
+	return user.Update(false)
+}
+
 func CompleteSubscriptionOrder(tradeNo string, providerPayload string) error {
 	if tradeNo == "" {
 		return errors.New("tradeNo is empty")
@@ -624,6 +641,9 @@ func CompleteSubscriptionOrder(tradeNo string, providerPayload string) error {
 	if logUserId > 0 {
 		msg := fmt.Sprintf("订阅购买成功，套餐: %s，支付金额: %.2f，支付方式: %s", logPlanTitle, logMoney, logPaymentMethod)
 		RecordLog(logUserId, LogTypeTopup, msg)
+		if err := ensureDefaultSubscriptionFirstPreference(logUserId); err != nil {
+			common.SysLog(fmt.Sprintf("failed to set default billing preference after subscription purchase (userId=%d): %v", logUserId, err))
+		}
 	}
 	return nil
 }
@@ -699,6 +719,9 @@ func AdminBindSubscription(userId int, planId int, sourceNote string) (string, e
 	})
 	if err != nil {
 		return "", err
+	}
+	if err := ensureDefaultSubscriptionFirstPreference(userId); err != nil {
+		common.SysLog(fmt.Sprintf("failed to set default billing preference after admin bind subscription (userId=%d): %v", userId, err))
 	}
 	if strings.TrimSpace(plan.UpgradeGroup) != "" {
 		_ = UpdateUserGroupCache(userId, plan.UpgradeGroup)

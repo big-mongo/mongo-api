@@ -184,6 +184,14 @@ const SubscriptionPurchaseModal = ({
                   closeIcon={null}
                 />
               ) : null}
+              <Banner
+                type='info'
+                description={t(
+                  '购买成功后，如你尚未设置扣费偏好，系统会默认切换为优先订阅。你也可以前往钱包管理中设置为优先订阅。',
+                )}
+                className='!rounded-xl'
+                closeIcon={null}
+              />
               <Divider margin={8} />
               <div className='flex justify-between items-center'>
                 <Text strong className='text-slate-700 dark:text-slate-200'>

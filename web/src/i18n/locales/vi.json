@@ -384,6 +384,7 @@
     "企业账户为特殊返回格式，需要特殊处理，如果非企业账户，请勿勾选": "Tài khoản doanh nghiệp có định dạng trả về đặc biệt và yêu cầu xử lý đặc biệt. Nếu không phải tài khoản doanh nghiệp, vui lòng không chọn tùy chọn này",
     "优先级": "Ưu tiên",
     "优先订阅": "Ưu tiên đăng ký",
+    "购买成功后，如你尚未设置扣费偏好，系统会默认切换为优先订阅。你也可以前往钱包管理中设置为优先订阅。": "Sau khi mua, nếu bạn chưa đặt tùy chọn ưu tiên thanh toán, hệ thống sẽ mặc định chuyển sang Ưu tiên đăng ký. Bạn cũng có thể vào Quản lý ví để tự đặt Ưu tiên đăng ký.",
     "优先钱包": "Ưu tiên ví",
     "优惠": "Giảm giá",
     "低于此额度时将发送邮件提醒用户": "Email nhắc nhở sẽ được gửi khi hạn ngạch giảm xuống dưới mức này",
